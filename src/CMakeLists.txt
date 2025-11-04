@@ -7,6 +7,8 @@ add_executable(${TARGET_NAME}
     MainWindow.cpp
     ui/ShapeItem.h
     ui/ShapeItem.cpp
+    ui/DrawingScene.h
+    ui/DrawingScene.cpp
     core/Shape.h
     core/Shape.cpp
     core/Serialization.h

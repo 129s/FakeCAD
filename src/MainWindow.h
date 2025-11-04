@@ -10,7 +10,7 @@ public:
 private:
     // 画布
     class QGraphicsView* view{};
-    class QGraphicsScene* scene{};
+    class DrawingScene* scene{};
 private:
     // actions
     QAction* actNew{};
@@ -20,6 +20,11 @@ private:
 
     QAction* actZoomIn{};
     QAction* actZoomOut{};
+    QAction* actSelect{};
+    QAction* actDrawLine{};
+    QAction* actDrawRect{};
+    QAction* actDrawCircle{};
+    class QActionGroup* drawGroup{};
     QAction* actAbout{};
 
     // ui builders
@@ -27,6 +32,7 @@ private:
     void createMenus();
     void createToolbars();
     void createStatusbar();
+    void updateViewDragMode();
 
 private slots:
     void onNew();
@@ -34,4 +40,8 @@ private slots:
     void onSave();
     void onExit();
     void onAbout();
+    void onSelectToggled(bool on);
+    void onDrawLineToggled(bool on);
+    void onDrawRectToggled(bool on);
+    void onDrawCircleToggled(bool on);
 };

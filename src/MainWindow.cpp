@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "ui/ShapeItem.h"
+#include "ui/DrawingScene.h"
 #include "core/shapes/LineSegment.h"
 #include "core/shapes/Rectangle.h"
 #include "core/shapes/Circle.h"
@@ -26,7 +27,7 @@ MainWindow::MainWindow(QWidget* parent)
     createToolbars();
     createStatusbar();
 
-    scene = new QGraphicsScene(this);
+    scene = new DrawingScene(this);
     scene->setSceneRect(-5000, -5000, 10000, 10000);
 
     view = new QGraphicsView(scene, this);
@@ -62,6 +63,31 @@ void MainWindow::createActions() {
 
     actAbout = new QAction(tr("关于"), this);
     connect(actAbout, &QAction::triggered, this, &MainWindow::onAbout);
+
+    // 绘制工具
+    actSelect = new QAction(tr("选择"), this);
+    actDrawLine = new QAction(tr("线段"), this);
+    actDrawRect = new QAction(tr("矩形"), this);
+    actDrawCircle = new QAction(tr("圆"), this);
+
+    actSelect->setCheckable(true);
+    actDrawLine->setCheckable(true);
+    actDrawRect->setCheckable(true);
+    actDrawCircle->setCheckable(true);
+
+    drawGroup = new QActionGroup(this);
+    drawGroup->setExclusive(true);
+    drawGroup->addAction(actSelect);
+    drawGroup->addAction(actDrawLine);
+    drawGroup->addAction(actDrawRect);
+    drawGroup->addAction(actDrawCircle);
+
+    actSelect->setChecked(true);
+
+    connect(actSelect, &QAction::toggled, this, &MainWindow::onSelectToggled);
+    connect(actDrawLine, &QAction::toggled, this, &MainWindow::onDrawLineToggled);
+    connect(actDrawRect, &QAction::toggled, this, &MainWindow::onDrawRectToggled);
+    connect(actDrawCircle, &QAction::toggled, this, &MainWindow::onDrawCircleToggled);
 }
 
 void MainWindow::createMenus() {
@@ -89,6 +115,12 @@ void MainWindow::createToolbars() {
     auto viewBar = addToolBar(tr("视图"));
     viewBar->addAction(actZoomIn);
     viewBar->addAction(actZoomOut);
+
+    auto drawBar = addToolBar(tr("绘制"));
+    drawBar->addAction(actSelect);
+    drawBar->addAction(actDrawLine);
+    drawBar->addAction(actDrawRect);
+    drawBar->addAction(actDrawCircle);
 }
 
 void MainWindow::createStatusbar() {
@@ -133,4 +165,44 @@ void MainWindow::onOpen() {
         scene->addItem(new ShapeItem(std::move(sp)));
     }
     statusBar()->showMessage(tr("已加载: %1").arg(path), 3000);
+}
+
+void MainWindow::updateViewDragMode() {
+    auto dm = scene->mode();
+    if (dm == DrawingScene::Mode::None) {
+        view->setDragMode(QGraphicsView::RubberBandDrag);
+        statusBar()->showMessage(tr("选择模式"), 2000);
+    } else {
+        view->setDragMode(QGraphicsView::NoDrag);
+        switch (dm) {
+        case DrawingScene::Mode::Line:   statusBar()->showMessage(tr("绘制线段：按下拖拽释放"), 2000); break;
+        case DrawingScene::Mode::Rect:   statusBar()->showMessage(tr("绘制矩形：按下拖拽释放"), 2000); break;
+        case DrawingScene::Mode::Circle: statusBar()->showMessage(tr("绘制圆（中心+半径）：按下拖拽释放"), 2000); break;
+        default: break;
+        }
+    }
+}
+
+void MainWindow::onSelectToggled(bool on) {
+    if (!on) return;
+    scene->setMode(DrawingScene::Mode::None);
+    updateViewDragMode();
+}
+
+void MainWindow::onDrawLineToggled(bool on) {
+    if (!on) return;
+    scene->setMode(DrawingScene::Mode::Line);
+    updateViewDragMode();
+}
+
+void MainWindow::onDrawRectToggled(bool on) {
+    if (!on) return;
+    scene->setMode(DrawingScene::Mode::Rect);
+    updateViewDragMode();
+}
+
+void MainWindow::onDrawCircleToggled(bool on) {
+    if (!on) return;
+    scene->setMode(DrawingScene::Mode::Circle);
+    updateViewDragMode();
 }
