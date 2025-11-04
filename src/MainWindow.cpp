@@ -8,6 +8,12 @@
 #include <QMessageBox>
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include <memory>
+
+#include "ui/ShapeItem.h"
+#include "core/shapes/LineSegment.h"
+#include "core/shapes/Rectangle.h"
+#include "core/shapes/Circle.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
@@ -26,8 +32,10 @@ MainWindow::MainWindow(QWidget* parent)
     view->setDragMode(QGraphicsView::RubberBandDrag);
     setCentralWidget(view);
 
-    // 示例元素（后续会被真实形状系统替换）
-    scene->addRect(-50, -50, 100, 100, QPen(Qt::gray), QBrush(Qt::NoBrush));
+    // 示例元素（基于模型的适配器）
+    scene->addItem(new ShapeItem(std::make_unique<LineSegment>(QPointF(-100, -80), QPointF(150, 60))));
+    scene->addItem(new ShapeItem(std::make_unique<Rectangle>(QRectF(-200, -150, 120, 90))));
+    scene->addItem(new ShapeItem(std::make_unique<Circle>(QPointF(180, -40), 60)));
 }
 
 void MainWindow::createActions() {
