@@ -2,7 +2,13 @@ set(TARGET_NAME fakecad)
 
 add_executable(${TARGET_NAME}
     WIN32
-    main.cpp;\n    core/Shape.h;\n    core/Shape.cpp
+    main.cpp;\n    core/Shape.h;\n    core/Shape.cpp;
+    core/shapes/LineSegment.h;
+    core/shapes/LineSegment.cpp;
+    core/shapes/Rectangle.h;
+    core/shapes/Rectangle.cpp;
+    core/shapes/Circle.h;
+    core/shapes/Circle.cpp
     MainWindow.h
     MainWindow.cpp
 )
