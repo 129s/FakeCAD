@@ -5,6 +5,7 @@
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QToolBar>
+#include <QActionGroup>
 #include <QMessageBox>
 #include <QGraphicsView>
 #include <QGraphicsScene>
