@@ -32,6 +32,7 @@ private:
     void createMenus();
     void createToolbars();
     void createStatusbar();
+    void createPropertyDock();
     void updateViewDragMode();
 
 private slots:
@@ -44,4 +45,9 @@ private slots:
     void onDrawLineToggled(bool on);
     void onDrawRectToggled(bool on);
     void onDrawCircleToggled(bool on);
+    void onSelectionChanged();
+
+private:
+    class PropertyPanel* propPanel{};
+    class QDockWidget* propDock{};
 };

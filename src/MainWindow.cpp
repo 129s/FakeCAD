@@ -9,10 +9,12 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QFileDialog>
+#include <QDockWidget>
 #include <memory>
 
 #include "ui/ShapeItem.h"
 #include "ui/DrawingScene.h"
+#include "ui/PropertyPanel.h"
 #include "core/shapes/LineSegment.h"
 #include "core/shapes/Rectangle.h"
 #include "core/shapes/Circle.h"
@@ -26,6 +28,7 @@ MainWindow::MainWindow(QWidget* parent)
     createMenus();
     createToolbars();
     createStatusbar();
+    createPropertyDock();
 
     scene = new DrawingScene(this);
     scene->setSceneRect(-5000, -5000, 10000, 10000);
@@ -127,6 +130,14 @@ void MainWindow::createStatusbar() {
     statusBar()->showMessage(tr("就绪"));
 }
 
+void MainWindow::createPropertyDock() {
+    propPanel = new PropertyPanel(this);
+    propDock = new QDockWidget(tr("属性"), this);
+    propDock->setWidget(propPanel);
+    addDockWidget(Qt::RightDockWidgetArea, propDock);
+    connect(scene, &QGraphicsScene::selectionChanged, this, &MainWindow::onSelectionChanged);
+}
+
 void MainWindow::onNew() { statusBar()->showMessage(tr("新建工程（待实现）"), 2000); }
 void MainWindow::onSave() {
     const auto path = QFileDialog::getSaveFileName(this, tr("保存为"), QString(), tr("FakeCAD JSON (*.json)"));
@@ -205,4 +216,13 @@ void MainWindow::onDrawCircleToggled(bool on) {
     if (!on) return;
     scene->setMode(DrawingScene::Mode::Circle);
     updateViewDragMode();
+}
+
+void MainWindow::onSelectionChanged() {
+    auto sel = scene->selectedItems();
+    if (sel.isEmpty()) { propPanel->clearTarget(); return; }
+    for (auto* it : sel) {
+        if (auto* si = dynamic_cast<ShapeItem*>(it)) { propPanel->setShapeItem(si); return; }
+    }
+    propPanel->clearTarget();
 }

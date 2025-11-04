@@ -9,6 +9,8 @@ add_executable(${TARGET_NAME}
     ui/ShapeItem.cpp
     ui/DrawingScene.h
     ui/DrawingScene.cpp
+    ui/PropertyPanel.h
+    ui/PropertyPanel.cpp
     core/Shape.h
     core/Shape.cpp
     core/Serialization.h

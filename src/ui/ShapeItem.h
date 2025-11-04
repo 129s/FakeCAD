@@ -16,8 +16,8 @@ public:
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
     Shape* shape() const { return shape_.get(); }
+    QString typeName() const { return shape_ ? shape_->typeName() : QString(); }
 
 private:
     std::unique_ptr<Shape> shape_;
 };
-

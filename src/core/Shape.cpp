@@ -19,7 +19,10 @@ void Shape::FromJsonCommon(const QJsonObject& obj) {
     if (obj.contains("name")) name_ = obj["name"].toString();
     if (obj.contains("style")) {
         auto s = obj["style"].toObject();
-        if (s.contains("color")) color_.setNamedColor(s["color"].toString());
+        if (s.contains("color")) {
+            color_.setNamedColor(s["color"].toString());
+            pen_.setColor(color_);
+        }
         if (s.contains("pen")) {
             auto p = s["pen"].toObject();
             if (p.contains("width")) pen_.setWidthF(p["width"].toDouble());
