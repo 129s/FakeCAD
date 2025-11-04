@@ -4,6 +4,8 @@
 #include <algorithm>
 
 #include "ControlPointItem.h"
+#include <QGraphicsSceneMouseEvent>
+#include "../undo/Commands.h"
 
 ShapeItem::ShapeItem(std::unique_ptr<Shape> shape, QGraphicsItem* parent)
     : QGraphicsItem(parent), shape_(std::move(shape)) {
@@ -111,6 +113,33 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             cc->setRadius(r);
             prepareGeometryChange();
             update();
+        }
+    }
+}
+
+void ShapeItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
+    if (event->button() == Qt::LeftButton) {
+        pressPos_ = pos();
+        pressRot_ = rotation();
+        moving_ = true;
+    }
+    QGraphicsItem::mousePressEvent(event);
+}
+
+void ShapeItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
+    QGraphicsItem::mouseReleaseEvent(event);
+    if (moving_ && event->button() == Qt::LeftButton) {
+        moving_ = false;
+        QPointF newPos = pos();
+        double newRot = rotation();
+        if ((std::hypot(newPos.x()-pressPos_.x(), newPos.y()-pressPos_.y()) > 0.1) || std::abs(newRot - pressRot_) > 0.1) {
+            if (scene()) {
+                if (auto ds = dynamic_cast<DrawingScene*>(scene())) {
+                    if (auto st = ds->undoStack()) {
+                        st->push(new UndoCmd::TransformShapeCommand(this, pressPos_, pressRot_, newPos, newRot));
+                    }
+                }
+            }
         }
     }
 }

@@ -47,4 +47,8 @@ private:
     bool showGrid_ { true };
     bool snapToGrid_ { false };
     qreal gridSize_ { 20.0 };
+
+    class QUndoStack* undo_ { nullptr };
 };
+    void setUndoStack(class QUndoStack* s) { undo_ = s; }
+    class QUndoStack* undoStack() const { return undo_; }

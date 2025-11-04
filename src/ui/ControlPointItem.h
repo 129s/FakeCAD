@@ -25,5 +25,6 @@ private:
     QPointF pressScenePos_ {};
     QPointF centerScene_ {};
     qreal initialOwnerRotation_ { 0.0 };
-};
 
+    QJsonObject oldJson_{}; // for geometry edits
+};

@@ -38,6 +38,10 @@ public:
         return QGraphicsItem::itemChange(change, value);
     }
 
+protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+
     Shape* shape() const { return shape_.get(); }
     QString typeName() const { return shape_ ? shape_->typeName() : QString(); }
 
@@ -54,4 +58,9 @@ private:
     QList<class QGraphicsItem*> handles_;
     class ControlPointItem* rotationHandle_ { nullptr };
     void clearHandles();
+
+    // move tracking
+    QPointF pressPos_{};
+    double pressRot_{};
+    bool moving_{false};
 };

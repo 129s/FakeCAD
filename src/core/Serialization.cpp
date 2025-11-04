@@ -25,7 +25,7 @@ QJsonDocument Serialize(const std::vector<Shape*>& shapes) {
     return QJsonDocument(root);
 }
 
-static std::unique_ptr<Shape> shapeFromJson(const QJsonObject& obj) {
+std::unique_ptr<Shape> FromJsonObject(const QJsonObject& obj) {
     const auto type = obj["type"].toString();
     if (type == QStringLiteral("LineSegment")) return LineSegment::FromJson(obj);
     if (type == QStringLiteral("Rectangle"))   return Rectangle::FromJson(obj);
@@ -41,7 +41,7 @@ std::vector<std::unique_ptr<Shape>> Deserialize(const QJsonDocument& doc) {
     out.reserve(arr.size());
     for (const auto& v : arr) {
         auto obj = v.toObject();
-        if (auto s = shapeFromJson(obj)) out.push_back(std::move(s));
+        if (auto s = FromJsonObject(obj)) out.push_back(std::move(s));
     }
     return out;
 }
@@ -73,5 +73,29 @@ std::vector<std::unique_ptr<Shape>> LoadFromFile(const QString& path, QString* e
     return Deserialize(doc);
 }
 
-} // namespace Ser
+bool ApplyJsonToShape(Shape* s, const QJsonObject& obj) {
+    if (!s) return false;
+    if (obj["type"].toString() != s->typeName()) return false;
+    s->FromJsonCommon(obj);
+    auto g = obj["geom"].toObject();
+    if (auto* ls = dynamic_cast<LineSegment*>(s)) {
+        QPointF p1(g["x1"].toDouble(), g["y1"].toDouble());
+        QPointF p2(g["x2"].toDouble(), g["y2"].toDouble());
+        ls->setP1(p1); ls->setP2(p2);
+        return true;
+    }
+    if (auto* rc = dynamic_cast<Rectangle*>(s)) {
+        QRectF r(g["x"].toDouble(), g["y"].toDouble(), g["w"].toDouble(), g["h"].toDouble());
+        rc->setRect(r);
+        return true;
+    }
+    if (auto* cc = dynamic_cast<Circle*>(s)) {
+        QPointF c(g["cx"].toDouble(), g["cy"].toDouble());
+        double r = g["r"].toDouble();
+        cc->setCenter(c); cc->setRadius(r);
+        return true;
+    }
+    return false;
+}
 
+} // namespace Ser

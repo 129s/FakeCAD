@@ -58,4 +58,5 @@ private slots:
 private:
     class PropertyPanel* propPanel{};
     class QDockWidget* propDock{};
+    class QUndoStack* undo_{};
 };

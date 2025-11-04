@@ -11,6 +11,8 @@
 #include "../core/shapes/LineSegment.h"
 #include "../core/shapes/Rectangle.h"
 #include "../core/shapes/Circle.h"
+#include "../undo/Commands.h"
+#include "../core/Serialization.h"
 
 DrawingScene::DrawingScene(QObject* parent)
     : QGraphicsScene(parent) {
@@ -89,7 +91,11 @@ void DrawingScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
         case Mode::Line: {
             if (previewLine_) { removeItem(previewLine_); delete previewLine_; previewLine_ = nullptr; }
             if (dist(startPos_, endPos) >= eps) {
-                addItem(new ShapeItem(std::make_unique<LineSegment>(startPos_, endPos)));
+                // 通过命令创建
+                LineSegment tmp(startPos_, endPos);
+                auto json = tmp.ToJson(); json["type"] = QStringLiteral("LineSegment");
+                if (undo_) undo_->push(new UndoCmd::AddShapeCommand(this, json));
+                else addItem(new ShapeItem(std::make_unique<LineSegment>(startPos_, endPos)));
             }
             break;
         }
@@ -97,7 +103,10 @@ void DrawingScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
             if (previewRect_) { removeItem(previewRect_); delete previewRect_; previewRect_ = nullptr; }
             QRectF r = QRectF(startPos_, endPos).normalized();
             if (r.width() >= eps && r.height() >= eps) {
-                addItem(new ShapeItem(std::make_unique<Rectangle>(r)));
+                Rectangle tmp(r);
+                auto json = tmp.ToJson(); json["type"] = QStringLiteral("Rectangle");
+                if (undo_) undo_->push(new UndoCmd::AddShapeCommand(this, json));
+                else addItem(new ShapeItem(std::make_unique<Rectangle>(r)));
             }
             break;
         }
@@ -105,7 +114,10 @@ void DrawingScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
             if (previewCircle_) { removeItem(previewCircle_); delete previewCircle_; previewCircle_ = nullptr; }
             const qreal r = std::hypot(endPos.x() - startPos_.x(), endPos.y() - startPos_.y());
             if (r >= eps) {
-                addItem(new ShapeItem(std::make_unique<Circle>(startPos_, r)));
+                Circle tmp(startPos_, r);
+                auto json = tmp.ToJson(); json["type"] = QStringLiteral("Circle");
+                if (undo_) undo_->push(new UndoCmd::AddShapeCommand(this, json));
+                else addItem(new ShapeItem(std::make_unique<Circle>(startPos_, r)));
             }
             break;
         }

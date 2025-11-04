@@ -11,6 +11,8 @@
 #include <QGraphicsScene>
 #include <QFileDialog>
 #include <QDockWidget>
+#include <QShortcut>
+#include <QUndoStack>
 #include <memory>
 
 #include "ui/ShapeItem.h"
@@ -21,6 +23,7 @@
 #include "core/shapes/Rectangle.h"
 #include "core/shapes/Circle.h"
 #include "core/Serialization.h"
+#include "undo/Commands.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
@@ -34,6 +37,8 @@ MainWindow::MainWindow(QWidget* parent)
 
     scene = new DrawingScene(this);
     scene->setSceneRect(-5000, -5000, 10000, 10000);
+    undo_ = new QUndoStack(this);
+    scene->setUndoStack(undo_);
 
     view = new CanvasView(scene, this);
     view->setDragMode(QGraphicsView::RubberBandDrag);
@@ -139,6 +144,13 @@ void MainWindow::createMenus() {
     fileMenu->addAction(actExit);
 
     auto editMenu = menuBar()->addMenu(tr("编辑"));
+    auto undoAct = undo_->createUndoAction(this, tr("撤销"));
+    undoAct->setShortcut(QKeySequence::Undo);
+    auto redoAct = undo_->createRedoAction(this, tr("重做"));
+    redoAct->setShortcuts({QKeySequence::Redo, QKeySequence(tr("Ctrl+Y"))});
+    editMenu->addAction(undoAct);
+    editMenu->addAction(redoAct);
+    editMenu->addSeparator();
     editMenu->addAction(actDelete);
 
     auto viewMenu = menuBar()->addMenu(tr("视图"));
@@ -273,10 +285,15 @@ void MainWindow::onResetZoom() { view->resetZoom(); }
 
 void MainWindow::onDelete() {
     propPanel->clearTarget();
-    auto items = scene->selectedItems();
-    for (auto* it : items) {
-        scene->removeItem(it);
-        delete it;
+    // 收集 JSON 快照
+    std::vector<QJsonObject> snap;
+    for (auto* it : scene->selectedItems()) {
+        if (auto* si = dynamic_cast<ShapeItem*>(it)) {
+            snap.push_back(si->shape()->ToJson());
+        }
+    }
+    if (!snap.empty() && undo_) {
+        undo_->push(new UndoCmd::DeleteShapesCommand(scene, snap));
     }
 }
 

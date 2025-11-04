@@ -19,6 +19,8 @@ add_executable(${TARGET_NAME}
     core/Shape.cpp
     core/Serialization.h
     core/Serialization.cpp
+    undo/Commands.h
+    undo/Commands.cpp
     core/shapes/LineSegment.h
     core/shapes/LineSegment.cpp
     core/shapes/Rectangle.h

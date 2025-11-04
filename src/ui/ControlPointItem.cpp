@@ -7,6 +7,8 @@
 #include "DrawingScene.h"
 
 #include "ShapeItem.h"
+#include "../undo/Commands.h"
+#include <QUndoStack>
 
 ControlPointItem::ControlPointItem(ShapeItem* owner, Kind kind, int index, const QRectF& rect)
     : QGraphicsRectItem(rect), owner_(owner), kind_(kind), index_(index) {
@@ -28,6 +30,10 @@ void ControlPointItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
         // use owner's local bounding rect center as pivot
         QPointF centerLocal = owner_->boundingRect().center();
         centerScene_ = owner_->mapToScene(centerLocal);
+    } else {
+        if (owner_ && owner_->shape()) {
+            oldJson_ = owner_->shape()->ToJson();
+        }
     }
 }
 
@@ -69,6 +75,23 @@ void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
         const QPointF local = owner_->mapFromScene(sp);
         owner_->handleMoved(static_cast<ShapeItem::HandleKind>(kind_), index_, local, event->scenePos(), true);
         owner_->updateHandles();
+        if (owner_ && owner_->shape()) {
+            QJsonObject neo = owner_->shape()->ToJson();
+            if (auto ds = dynamic_cast<class DrawingScene*>(owner_->scene())) {
+                if (auto st = ds->undoStack()) {
+                    st->push(new UndoCmd::EditShapeJsonCommand(owner_, oldJson_, neo));
+                }
+            }
+        }
+    } else {
+        const qreal newRot = owner_->rotation();
+        if (std::abs(newRot - initialOwnerRotation_) > 0.1) {
+            if (auto ds = dynamic_cast<class DrawingScene*>(owner_->scene())) {
+                if (auto st = ds->undoStack()) {
+                    st->push(new UndoCmd::TransformShapeCommand(owner_, owner_->pos(), initialOwnerRotation_, owner_->pos(), newRot));
+                }
+            }
+        }
     }
     QGraphicsRectItem::mouseReleaseEvent(event);
 }
