@@ -149,6 +149,7 @@ void MainWindow::onSave() {
             // 同步项位置到模型（仅平移）
             const auto p = si->pos();
             si->shape()->MoveTo(p.x(), p.y());
+            si->shape()->setRotationDegrees(si->rotation());
             shapes.push_back(si->shape());
         }
     }

@@ -26,15 +26,20 @@ void PropertyPanel::rebuildUI() {
     penWidthSpin_ = new QDoubleSpinBox(this);
     penWidthSpin_->setRange(0.1, 50.0);
     penWidthSpin_->setSingleStep(0.5);
+    rotSpin_ = new QDoubleSpinBox(this);
+    rotSpin_->setRange(-360.0, 360.0);
+    rotSpin_->setSingleStep(1.0);
 
     lay->addRow(lblType_);
     lay->addRow(tr("名称"), nameEdit_);
     lay->addRow(tr("颜色"), colorBtn_);
     lay->addRow(tr("线宽"), penWidthSpin_);
+    lay->addRow(tr("旋转(°)"), rotSpin_);
 
     connect(nameEdit_, &QLineEdit::textEdited, this, &PropertyPanel::onNameEdited);
     connect(penWidthSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &PropertyPanel::onPenWidthChanged);
     connect(colorBtn_, &QPushButton::clicked, this, &PropertyPanel::onColorClicked);
+    connect(rotSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &PropertyPanel::onRotationChanged);
 }
 
 void PropertyPanel::setShapeItem(ShapeItem* item) {
@@ -52,8 +57,9 @@ void PropertyPanel::refreshFromTarget() {
     if (!target_) {
         lblType_->setText(tr("类型: -"));
         nameEdit_->setText(QString());
-        colorBtn_->setEnabled(false);
-        penWidthSpin_->setEnabled(false);
+    colorBtn_->setEnabled(false);
+    penWidthSpin_->setEnabled(false);
+    rotSpin_->setEnabled(false);
         updating_ = false;
         return;
     }
@@ -64,6 +70,8 @@ void PropertyPanel::refreshFromTarget() {
     penWidthSpin_->setEnabled(true);
     applyColorToButton(s->pen().color());
     penWidthSpin_->setValue(s->pen().widthF());
+    rotSpin_->setEnabled(true);
+    rotSpin_->setValue(s->rotationDegrees());
     updating_ = false;
 }
 
@@ -99,3 +107,9 @@ void PropertyPanel::onColorClicked() {
     target_->update();
 }
 
+void PropertyPanel::onRotationChanged(double deg) {
+    if (updating_ || !target_) return;
+    target_->shape()->setRotationDegrees(deg);
+    target_->setRotation(deg);
+    target_->updateHandles();
+}

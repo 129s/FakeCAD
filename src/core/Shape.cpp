@@ -10,8 +10,8 @@ QJsonObject Shape::ToJson() const {
         {"color", color_.name(QColor::HexArgb)},
         {"pen", QJsonObject{{"width", pen_.widthF()}}}
     };
-    // 简化的变换，仅保存平移；旋转/缩放后续扩展
-    obj["transform"] = QJsonObject{{"tx", transform_.m31()}, {"ty", transform_.m32()}};
+    // 变换：平移 + 旋转（度）
+    obj["transform"] = QJsonObject{{"tx", transform_.m31()}, {"ty", transform_.m32()}, {"rot", rotation_deg_}};
     return obj;
 }
 
@@ -32,6 +32,7 @@ void Shape::FromJsonCommon(const QJsonObject& obj) {
         auto t = obj["transform"].toObject();
         auto tx = t["tx"].toDouble();
         auto ty = t["ty"].toDouble();
+        if (t.contains("rot")) rotation_deg_ = t["rot"].toDouble();
         QTransform newT = transform_;
         newT.setMatrix(newT.m11(), newT.m12(), newT.m13(),
                        newT.m21(), newT.m22(), newT.m23(),

@@ -14,10 +14,30 @@ public:
 
     QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override {
+        if (change == ItemSelectedHasChanged) {
+            bool sel = value.toBool();
+            showHandles(sel);
+        } else if (change == ItemRotationHasChanged) {
+            updateHandles();
+        }
+        return QGraphicsItem::itemChange(change, value);
+    }
 
     Shape* shape() const { return shape_.get(); }
     QString typeName() const { return shape_ ? shape_->typeName() : QString(); }
 
+    // 控制点支持
+    void showHandles(bool show);
+    void updateHandles();
+
+    // 内部回调：控制点移动
+    enum class HandleKind { Vertex, Corner, Center, Radius, Rotation };
+    void handleMoved(HandleKind kind, int index, const QPointF& localPos, const QPointF& scenePos, bool release);
+
 private:
     std::unique_ptr<Shape> shape_;
+    QList<class QGraphicsItem*> handles_;
+    class ControlPointItem* rotationHandle_ { nullptr };
+    void clearHandles();
 };

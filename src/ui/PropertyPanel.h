@@ -20,6 +20,7 @@ private slots:
     void onNameEdited(const QString& text);
     void onPenWidthChanged(double w);
     void onColorClicked();
+    void onRotationChanged(double deg);
 
 private:
     void rebuildUI();
@@ -33,5 +34,5 @@ private:
     QLineEdit* nameEdit_ {};
     QPushButton* colorBtn_ {};
     QDoubleSpinBox* penWidthSpin_ {};
+    QDoubleSpinBox* rotSpin_ {};
 };
-

@@ -40,7 +40,7 @@ public:
         transform_ = t;
     }
     virtual void Rotate(double angleDeg) {
-        transform_.rotate(angleDeg);
+        rotation_deg_ += angleDeg;
     }
 
     // 度量接口
@@ -58,6 +58,11 @@ protected:
     QColor color_{Qt::black};
     QPen pen_{QPen(Qt::black)};
     QTransform transform_{};
+    double rotation_deg_ {0.0};
+
+public:
+    double rotationDegrees() const { return rotation_deg_; }
+    void setRotationDegrees(double deg) { rotation_deg_ = deg; }
 };
 
 class LineShape : public Shape {
@@ -77,4 +82,3 @@ public:
     virtual double Perimeter() const = 0;
     double Length() const override { return Perimeter(); }
 };
-
