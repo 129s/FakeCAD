@@ -1,6 +1,7 @@
 #include "Shape.h"
 
 #include <QtMath>
+#include <cmath>
 
 QJsonObject Shape::ToJson() const {
     QJsonObject obj;
@@ -47,4 +48,3 @@ double LineShape::Length() const {
     }
     return sum;
 }
-
