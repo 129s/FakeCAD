@@ -38,7 +38,7 @@
 - [x] 绘制流程（点击/拖拽创建）：线段、矩形、圆
 - [x] 选择/移动交互与属性面板
 - [x] 长度/周长/面积计算与渲染标注
-- [ ] Triangle/Polygon/Polyline/Ellipse 完整实现
+- [x] Triangle/Polygon/Polyline/Ellipse 完整实现
 - [x] 旋转/控制点编辑
 - [x] 快捷键（工具切换/视图缩放/网格切换/删除/Esc）
 - [x] 稳定性与边界处理（退化图形过滤、属性面板指针清理、网格绘制cosmetic、缩放范围限制）
