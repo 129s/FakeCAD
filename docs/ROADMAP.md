@@ -28,7 +28,7 @@
    - 打包与发布说明（Windows 优先）
 
 ## 任务清单（建议顺序）
-- [ ] 初始化 CMake 项目（Qt6 Widgets 模板）
+- [x] 初始化 CMake 项目（Qt6 Widgets 模板）
 - [ ] 搭建基础 UI（主窗体、菜单、工具栏、状态栏）
 - [ ] 引入 QGraphicsView/Scene 画布
 - [ ] 定义抽象类与通用属性/方法
