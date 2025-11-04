@@ -31,17 +31,28 @@ void ShapeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
 
     if (auto* ls = dynamic_cast<LineSegment*>(shape_.get())) {
         painter->drawLine(ls->p1(), ls->p2());
+        const double L = ls->Length();
+        painter->setPen(QPen(Qt::darkGray));
+        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("L=%1").arg(L, 0, 'f', 2));
         return;
     }
     if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         painter->drawRect(rc->rect());
+        painter->setPen(QPen(Qt::darkGray));
+        const double P = rc->Perimeter();
+        const double A = rc->Area();
+        painter->drawText(rc->rect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(P, 0, 'f', 2).arg(A, 0, 'f', 2));
         return;
     }
     if (auto* cc = dynamic_cast<Circle*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         const auto r = cc->radius();
         painter->drawEllipse(cc->center(), r, r);
+        painter->setPen(QPen(Qt::darkGray));
+        const double P = cc->Perimeter();
+        const double A = cc->Area();
+        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(P, 0, 'f', 2).arg(A, 0, 'f', 2));
         return;
     }
 }
