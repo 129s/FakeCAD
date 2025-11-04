@@ -24,8 +24,9 @@ public:
     bool snapToGrid() const { return snapToGrid_; }
     void setGridSize(qreal s) { gridSize_ = s; update(); }
     qreal gridSize() const { return gridSize_; }
+    QPointF snapPoint(const QPointF& p) const;
 
-protected:
+ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
@@ -41,7 +42,6 @@ private:
     QGraphicsEllipseItem* previewCircle_ { nullptr };
 
     void clearPreview();
-    QPointF snapPoint(const QPointF& p) const;
 
     // grid settings
     bool showGrid_ { true };

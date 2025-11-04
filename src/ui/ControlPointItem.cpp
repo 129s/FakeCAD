@@ -4,6 +4,8 @@
 #include <QPen>
 #include <QtMath>
 
+#include "DrawingScene.h"
+
 #include "ShapeItem.h"
 
 ControlPointItem::ControlPointItem(ShapeItem* owner, Kind kind, int index, const QRectF& rect)

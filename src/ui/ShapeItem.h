@@ -3,6 +3,7 @@
 #include <memory>
 #include <QGraphicsItem>
 #include "../core/Shape.h"
+#include "DrawingScene.h"
 #include "../core/shapes/LineSegment.h"
 #include "../core/shapes/Rectangle.h"
 #include "../core/shapes/Circle.h"
