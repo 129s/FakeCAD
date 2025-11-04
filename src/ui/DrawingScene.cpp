@@ -45,6 +45,9 @@ void DrawingScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
         case Mode::Circle:
             previewCircle_ = addEllipse(QRectF(startPos_, startPos_), QPen(Qt::darkGray, 1, Qt::DashLine));
             break;
+        case Mode::Ellipse:
+            previewEllipse_ = addEllipse(QRectF(startPos_, startPos_), QPen(Qt::darkGray, 1, Qt::DashLine));
+            break;
         default:
             break;
         }
@@ -70,6 +73,18 @@ void DrawingScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
                 const qreal r = std::hypot(cur.x() - startPos_.x(), cur.y() - startPos_.y());
                 QRectF box(startPos_.x() - r, startPos_.y() - r, 2*r, 2*r);
                 previewCircle_->setRect(box);
+            }
+            break;
+        }
+        case Mode::Ellipse: {
+            if (previewEllipse_) {
+                QRectF box(startPos_, cur);
+                box = box.normalized();
+                // center 固定为 startPos_
+                previewEllipse_->setRect(QRectF(startPos_.x() - std::abs(cur.x()-startPos_.x()),
+                                                startPos_.y() - std::abs(cur.y()-startPos_.y()),
+                                                2*std::abs(cur.x()-startPos_.x()),
+                                                2*std::abs(cur.y()-startPos_.y())));
             }
             break;
         }
@@ -118,6 +133,18 @@ void DrawingScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
                 auto json = tmp.ToJson(); json["type"] = QStringLiteral("Circle");
                 if (undo_) undo_->push(new UndoCmd::AddShapeCommand(this, json));
                 else addItem(new ShapeItem(std::make_unique<Circle>(startPos_, r)));
+            }
+            break;
+        }
+        case Mode::Ellipse: {
+            if (previewEllipse_) { removeItem(previewEllipse_); delete previewEllipse_; previewEllipse_ = nullptr; }
+            const qreal rx = std::abs(endPos.x() - startPos_.x());
+            const qreal ry = std::abs(endPos.y() - startPos_.y());
+            if (rx >= eps && ry >= eps) {
+                Ellipse tmp(startPos_, rx, ry);
+                auto json = tmp.ToJson(); json["type"] = QStringLiteral("Ellipse");
+                if (undo_) undo_->push(new UndoCmd::AddShapeCommand(this, json));
+                else addItem(new ShapeItem(std::make_unique<Ellipse>(startPos_, rx, ry)));
             }
             break;
         }

@@ -7,6 +7,10 @@
 #include "../core/shapes/LineSegment.h"
 #include "../core/shapes/Rectangle.h"
 #include "../core/shapes/Circle.h"
+#include "../core/shapes/Triangle.h"
+#include "../core/shapes/Polygon.h"
+#include "../core/shapes/Polyline.h"
+#include "../core/shapes/Ellipse.h"
 
 class ShapeItem : public QGraphicsItem {
 public:

@@ -2,6 +2,7 @@
 
 #include <QPainter>
 #include <algorithm>
+#include <cmath>
 
 #include "ControlPointItem.h"
 #include <QGraphicsSceneMouseEvent>
@@ -30,6 +31,19 @@ QRectF ShapeItem::boundingRect() const {
         const auto r = cc->radius();
         return QRectF(cc->center().x() - r, cc->center().y() - r, 2 * r, 2 * r).adjusted(-1, -1, 1, 1);
     }
+    if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
+        QPolygonF poly; poly << tr->p1() << tr->p2() << tr->p3();
+        return poly.boundingRect().adjusted(-1, -1, 1, 1);
+    }
+    if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
+        return QPolygonF(pg->points()).boundingRect().adjusted(-1, -1, 1, 1);
+    }
+    if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
+        return QPolygonF(pl->points()).boundingRect().adjusted(-1, -1, 1, 1);
+    }
+    if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
+        return QRectF(el->center().x()-el->rx(), el->center().y()-el->ry(), el->rx()*2, el->ry()*2).adjusted(-1,-1,1,1);
+    }
     return {};
 }
 
@@ -57,6 +71,16 @@ void ShapeItem::updateHandles() {
     if (auto* ls = dynamic_cast<LineSegment*>(shape_.get())) {
         mk(HandleKind::Vertex, 0, ls->p1());
         mk(HandleKind::Vertex, 1, ls->p2());
+    } else if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
+        mk(HandleKind::Vertex, 0, tr->p1());
+        mk(HandleKind::Vertex, 1, tr->p2());
+        mk(HandleKind::Vertex, 2, tr->p3());
+    } else if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
+        const auto& pts = pg->points();
+        for (int i=0;i<pts.size();++i) mk(HandleKind::Vertex, i, pts[i]);
+    } else if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
+        const auto& pts = pl->points();
+        for (int i=0;i<pts.size();++i) mk(HandleKind::Vertex, i, pts[i]);
     } else if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
         const auto r = rc->rect().normalized();
         mk(HandleKind::Corner, 0, r.topLeft());
@@ -67,6 +91,11 @@ void ShapeItem::updateHandles() {
         const auto c = cc->center();
         mk(HandleKind::Center, 0, c);
         mk(HandleKind::Radius, 0, c + QPointF(cc->radius(), 0));
+    } else if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
+        const auto c = el->center();
+        mk(HandleKind::Center, 0, c);
+        mk(HandleKind::Radius, 0, c + QPointF(el->rx(), 0));
+        mk(HandleKind::Radius, 1, c + QPointF(0, el->ry()));
     }
 
     // 旋转手柄：放在局部包围盒顶部中心上方 30px
@@ -82,6 +111,27 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             if (index == 0) ls->setP1(localPos); else ls->setP2(localPos);
             prepareGeometryChange();
             update();
+        }
+    } else if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
+        if (kind == HandleKind::Vertex) {
+            if (index == 0) tr->setP1(localPos);
+            else if (index == 1) tr->setP2(localPos);
+            else tr->setP3(localPos);
+            prepareGeometryChange(); update();
+        }
+    } else if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
+        if (kind == HandleKind::Vertex) {
+            auto pts = pg->points();
+            if (index>=0 && index<pts.size()) pts[index] = localPos;
+            pg->setPoints(pts);
+            prepareGeometryChange(); update();
+        }
+    } else if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
+        if (kind == HandleKind::Vertex) {
+            auto pts = pl->points();
+            if (index>=0 && index<pts.size()) pts[index] = localPos;
+            pl->setPoints(pts);
+            prepareGeometryChange(); update();
         }
     } else if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
         if (kind == HandleKind::Corner) {
@@ -113,6 +163,16 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             cc->setRadius(r);
             prepareGeometryChange();
             update();
+        }
+    } else if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
+        if (kind == HandleKind::Center) {
+            el->setCenter(localPos);
+            prepareGeometryChange(); update();
+        } else if (kind == HandleKind::Radius) {
+            const auto c = el->center();
+            if (index == 0) el->setRx(std::abs(localPos.x() - c.x()));
+            else el->setRy(std::abs(localPos.y() - c.y()));
+            prepareGeometryChange(); update();
         }
     }
 }
@@ -172,6 +232,35 @@ void ShapeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
         const double P = cc->Perimeter();
         const double A = cc->Area();
         painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(P, 0, 'f', 2).arg(A, 0, 'f', 2));
+        return;
+    }
+    if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
+        painter->setBrush(Qt::NoBrush);
+        QPolygonF poly; poly << tr->p1() << tr->p2() << tr->p3();
+        painter->drawPolygon(poly);
+        painter->setPen(QPen(Qt::darkGray));
+        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(tr->Perimeter(), 0, 'f', 2).arg(tr->Area(), 0, 'f', 2));
+        return;
+    }
+    if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
+        painter->setBrush(Qt::NoBrush);
+        painter->drawPolygon(QPolygonF(pg->points()));
+        painter->setPen(QPen(Qt::darkGray));
+        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(pg->Perimeter(), 0, 'f', 2).arg(pg->Area(), 0, 'f', 2));
+        return;
+    }
+    if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
+        painter->setBrush(Qt::NoBrush);
+        painter->drawPolyline(QPolygonF(pl->points()));
+        painter->setPen(QPen(Qt::darkGray));
+        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("L=%1").arg(pl->Length(), 0, 'f', 2));
+        return;
+    }
+    if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
+        painter->setBrush(Qt::NoBrush);
+        painter->drawEllipse(el->center(), el->rx(), el->ry());
+        painter->setPen(QPen(Qt::darkGray));
+        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(el->Perimeter(), 0, 'f', 2).arg(el->Area(), 0, 'f', 2));
         return;
     }
 }

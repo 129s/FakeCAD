@@ -5,6 +5,13 @@
 #include <QString>
 #include <QJsonDocument>
 #include "Shape.h"
+#include "shapes/LineSegment.h"
+#include "shapes/Rectangle.h"
+#include "shapes/Circle.h"
+#include "shapes/Triangle.h"
+#include "shapes/Polygon.h"
+#include "shapes/Polyline.h"
+#include "shapes/Ellipse.h"
 
 namespace Ser {
 

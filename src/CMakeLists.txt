@@ -27,6 +27,14 @@ add_executable(${TARGET_NAME}
     core/shapes/Rectangle.cpp
     core/shapes/Circle.h
     core/shapes/Circle.cpp
+    core/shapes/Triangle.h
+    core/shapes/Triangle.cpp
+    core/shapes/Polygon.h
+    core/shapes/Polygon.cpp
+    core/shapes/Polyline.h
+    core/shapes/Polyline.cpp
+    core/shapes/Ellipse.h
+    core/shapes/Ellipse.cpp
 )
 
 target_link_libraries(${TARGET_NAME}

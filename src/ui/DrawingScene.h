@@ -10,7 +10,7 @@ class QGraphicsEllipseItem;
 class DrawingScene : public QGraphicsScene {
     Q_OBJECT
 public:
-    enum class Mode { None, Line, Rect, Circle };
+    enum class Mode { None, Line, Rect, Circle, Ellipse };
 
     explicit DrawingScene(QObject* parent = nullptr);
 
@@ -40,6 +40,7 @@ private:
     QGraphicsLineItem*    previewLine_   { nullptr };
     QGraphicsRectItem*    previewRect_   { nullptr };
     QGraphicsEllipseItem* previewCircle_ { nullptr };
+    QGraphicsEllipseItem* previewEllipse_ { nullptr };
 
     void clearPreview();
 

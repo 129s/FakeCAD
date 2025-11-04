@@ -3,6 +3,7 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QKeyEvent>
+#include <algorithm>
 
 CanvasView::CanvasView(QWidget* parent)
     : QGraphicsView(parent) {

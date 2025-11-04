@@ -30,6 +30,10 @@ std::unique_ptr<Shape> FromJsonObject(const QJsonObject& obj) {
     if (type == QStringLiteral("LineSegment")) return LineSegment::FromJson(obj);
     if (type == QStringLiteral("Rectangle"))   return Rectangle::FromJson(obj);
     if (type == QStringLiteral("Circle"))      return Circle::FromJson(obj);
+    if (type == QStringLiteral("Triangle"))    return Triangle::FromJson(obj);
+    if (type == QStringLiteral("Polygon"))     return Polygon::FromJson(obj);
+    if (type == QStringLiteral("Polyline"))    return Polyline::FromJson(obj);
+    if (type == QStringLiteral("Ellipse"))     return Ellipse::FromJson(obj);
     return {};
 }
 
@@ -93,6 +97,30 @@ bool ApplyJsonToShape(Shape* s, const QJsonObject& obj) {
         QPointF c(g["cx"].toDouble(), g["cy"].toDouble());
         double r = g["r"].toDouble();
         cc->setCenter(c); cc->setRadius(r);
+        return true;
+    }
+    if (auto* tr = dynamic_cast<Triangle*>(s)) {
+        QPointF a(g["x1"].toDouble(), g["y1"].toDouble());
+        QPointF b(g["x2"].toDouble(), g["y2"].toDouble());
+        QPointF c(g["x3"].toDouble(), g["y3"].toDouble());
+        tr->setP1(a); tr->setP2(b); tr->setP3(c);
+        return true;
+    }
+    if (auto* pg = dynamic_cast<Polygon*>(s)) {
+        QVector<QPointF> pts; for (const auto& v : g["points"].toArray()) { auto o = v.toObject(); pts.push_back(QPointF(o["x"].toDouble(), o["y"].toDouble())); }
+        pg->setPoints(pts);
+        return true;
+    }
+    if (auto* pl = dynamic_cast<Polyline*>(s)) {
+        QVector<QPointF> pts; for (const auto& v : g["points"].toArray()) { auto o = v.toObject(); pts.push_back(QPointF(o["x"].toDouble(), o["y"].toDouble())); }
+        pl->setPoints(pts);
+        return true;
+    }
+    if (auto* el = dynamic_cast<Ellipse*>(s)) {
+        QPointF c(g["cx"].toDouble(), g["cy"].toDouble());
+        double rx = g["rx"].toDouble();
+        double ry = g["ry"].toDouble();
+        el->setCenter(c); el->setRx(rx); el->setRy(ry);
         return true;
     }
     return false;

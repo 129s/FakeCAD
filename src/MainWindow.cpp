@@ -88,15 +88,18 @@ void MainWindow::createActions() {
     actDrawLine = new QAction(tr("线段"), this);
     actDrawRect = new QAction(tr("矩形"), this);
     actDrawCircle = new QAction(tr("圆"), this);
+    actDrawEllipse = new QAction(tr("椭圆"), this);
 
     actSelect->setCheckable(true);
     actDrawLine->setCheckable(true);
     actDrawRect->setCheckable(true);
     actDrawCircle->setCheckable(true);
+    actDrawEllipse->setCheckable(true);
     actSelect->setShortcut(QKeySequence(tr("1")));
     actDrawLine->setShortcut(QKeySequence(tr("2")));
     actDrawRect->setShortcut(QKeySequence(tr("3")));
     actDrawCircle->setShortcut(QKeySequence(tr("4")));
+    actDrawEllipse->setShortcut(QKeySequence(tr("5")));
 
     drawGroup = new QActionGroup(this);
     drawGroup->setExclusive(true);
@@ -104,6 +107,7 @@ void MainWindow::createActions() {
     drawGroup->addAction(actDrawLine);
     drawGroup->addAction(actDrawRect);
     drawGroup->addAction(actDrawCircle);
+    drawGroup->addAction(actDrawEllipse);
 
     actSelect->setChecked(true);
 
@@ -111,6 +115,7 @@ void MainWindow::createActions() {
     connect(actDrawLine, &QAction::toggled, this, &MainWindow::onDrawLineToggled);
     connect(actDrawRect, &QAction::toggled, this, &MainWindow::onDrawRectToggled);
     connect(actDrawCircle, &QAction::toggled, this, &MainWindow::onDrawCircleToggled);
+    connect(actDrawEllipse, &QAction::toggled, this, &MainWindow::onDrawEllipseToggled);
 
     // Esc 返回选择
     auto escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
@@ -183,6 +188,7 @@ void MainWindow::createToolbars() {
     drawBar->addAction(actDrawLine);
     drawBar->addAction(actDrawRect);
     drawBar->addAction(actDrawCircle);
+    drawBar->addAction(actDrawEllipse);
 }
 
 void MainWindow::createStatusbar() {
@@ -250,6 +256,7 @@ void MainWindow::updateViewDragMode() {
         case DrawingScene::Mode::Line:   statusBar()->showMessage(tr("绘制线段：按下拖拽释放"), 2000); break;
         case DrawingScene::Mode::Rect:   statusBar()->showMessage(tr("绘制矩形：按下拖拽释放"), 2000); break;
         case DrawingScene::Mode::Circle: statusBar()->showMessage(tr("绘制圆（中心+半径）：按下拖拽释放"), 2000); break;
+        case DrawingScene::Mode::Ellipse: statusBar()->showMessage(tr("绘制椭圆（中心+半径X/Y）：按下拖拽释放"), 2000); break;
         default: break;
         }
     }
@@ -276,6 +283,11 @@ void MainWindow::onDrawRectToggled(bool on) {
 void MainWindow::onDrawCircleToggled(bool on) {
     if (!on) return;
     scene->setMode(DrawingScene::Mode::Circle);
+    updateViewDragMode();
+}
+void MainWindow::onDrawEllipseToggled(bool on) {
+    if (!on) return;
+    scene->setMode(DrawingScene::Mode::Ellipse);
     updateViewDragMode();
 }
 
