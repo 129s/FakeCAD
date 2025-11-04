@@ -5,6 +5,7 @@
 #include <QGraphicsRectItem>
 #include <QGraphicsEllipseItem>
 #include <QtMath>
+#include <cmath>
 
 #include "ShapeItem.h"
 #include "../core/shapes/LineSegment.h"
@@ -122,7 +123,9 @@ void DrawingScene::drawBackground(QPainter* painter, const QRectF& rect) {
     if (!showGrid_) return;
     const qreal s = gridSize_ <= 0 ? 20.0 : gridSize_;
     painter->save();
-    painter->setPen(QPen(QColor(230,230,230)));
+    QPen gridPen(QColor(230,230,230));
+    gridPen.setCosmetic(true); // width not scaled by zoom
+    painter->setPen(gridPen);
     const qreal left = std::floor(rect.left() / s) * s;
     const qreal top  = std::floor(rect.top() / s) * s;
     for (qreal x = left; x < rect.right(); x += s) painter->drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()));

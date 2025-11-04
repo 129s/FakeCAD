@@ -4,6 +4,7 @@
 #include <QPointF>
 #include <QRectF>
 #include "../Shape.h"
+#include <algorithm>
 
 class Circle : public AreaShape {
 public:
@@ -23,7 +24,7 @@ public:
     const QPointF& center() const { return center_; }
     double radius() const { return radius_; }
     void setCenter(const QPointF& c) { center_ = c; }
-    void setRadius(double r) { radius_ = r; }
+    void setRadius(double r) { radius_ = std::max(0.0, r); }
 
     QJsonObject ToJson() const override;
     static std::unique_ptr<Circle> FromJson(const QJsonObject& obj);

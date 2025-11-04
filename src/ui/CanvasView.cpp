@@ -20,7 +20,7 @@ void CanvasView::wheelEvent(QWheelEvent* event) {
     if (event->angleDelta().y() == 0) { QGraphicsView::wheelEvent(event); return; }
     const int delta = event->angleDelta().y();
     const qreal factor = delta > 0 ? zoomFactor_ : (1.0 / zoomFactor_);
-    scale(factor, factor);
+    zoomBy(factor);
 }
 
 void CanvasView::mousePressEvent(QMouseEvent* event) {
@@ -73,3 +73,15 @@ void CanvasView::endPan() {
     setDragMode(savedDragMode_);
 }
 
+void CanvasView::zoomBy(qreal factor) {
+    // clamp to min/max scale (assume uniform scale)
+    const qreal cur = transform().m11();
+    qreal next = cur * factor;
+    next = std::clamp(next, minScale_, maxScale_);
+    const qreal apply = next / cur;
+    scale(apply, apply);
+}
+
+void CanvasView::resetZoom() {
+    resetTransform();
+}

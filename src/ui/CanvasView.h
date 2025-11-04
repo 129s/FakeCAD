@@ -21,10 +21,15 @@ protected:
 
 private:
     qreal zoomFactor_ { 1.15 };
+    qreal minScale_ { 0.1 };
+    qreal maxScale_ { 10.0 };
     bool spacePanning_ { false };
     DragMode savedDragMode_ { QGraphicsView::NoDrag };
 
     void beginPan();
     void endPan();
-};
 
+public:
+    void zoomBy(qreal factor);
+    void resetZoom();
+};

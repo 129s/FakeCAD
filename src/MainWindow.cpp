@@ -214,6 +214,7 @@ void MainWindow::onOpen() {
     const auto path = QFileDialog::getOpenFileName(this, tr("打开"), QString(), tr("FakeCAD JSON (*.json)"));
     if (path.isEmpty()) return;
     QString err;
+    propPanel->clearTarget();
     auto shapes = Ser::LoadFromFile(path, &err);
     if (!err.isEmpty()) {
         QMessageBox::warning(this, tr("打开失败"), err);
@@ -266,11 +267,12 @@ void MainWindow::onDrawCircleToggled(bool on) {
     updateViewDragMode();
 }
 
-void MainWindow::onZoomIn() { view->scale(1.15, 1.15); }
-void MainWindow::onZoomOut() { view->scale(1.0/1.15, 1.0/1.15); }
-void MainWindow::onResetZoom() { view->resetTransform(); }
+void MainWindow::onZoomIn() { view->zoomBy(1.15); }
+void MainWindow::onZoomOut() { view->zoomBy(1.0/1.15); }
+void MainWindow::onResetZoom() { view->resetZoom(); }
 
 void MainWindow::onDelete() {
+    propPanel->clearTarget();
     auto items = scene->selectedItems();
     for (auto* it : items) {
         scene->removeItem(it);
