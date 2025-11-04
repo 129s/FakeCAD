@@ -8,6 +8,10 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override = default;
 private:
+    // 画布
+    class QGraphicsView* view{};
+    class QGraphicsScene* scene{};
+private:
     // actions
     QAction* actNew{};
     QAction* actOpen{};

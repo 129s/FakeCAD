@@ -6,6 +6,8 @@
 #include <QStatusBar>
 #include <QToolBar>
 #include <QMessageBox>
+#include <QGraphicsView>
+#include <QGraphicsScene>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
@@ -15,6 +17,17 @@ MainWindow::MainWindow(QWidget* parent)
     createMenus();
     createToolbars();
     createStatusbar();
+
+    scene = new QGraphicsScene(this);
+    scene->setSceneRect(-5000, -5000, 10000, 10000);
+
+    view = new QGraphicsView(scene, this);
+    view->setRenderHint(QPainter::Antialiasing, true);
+    view->setDragMode(QGraphicsView::RubberBandDrag);
+    setCentralWidget(view);
+
+    // 示例元素（后续会被真实形状系统替换）
+    scene->addRect(-50, -50, 100, 100, QPen(Qt::gray), QBrush(Qt::NoBrush));
 }
 
 void MainWindow::createActions() {
