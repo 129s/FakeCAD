@@ -2,7 +2,7 @@ set(TARGET_NAME fakecad)
 
 add_executable(${TARGET_NAME}
     WIN32
-    main.cpp
+    main.cpp;\n    core/Shape.h;\n    core/Shape.cpp
     MainWindow.h
     MainWindow.cpp
 )
