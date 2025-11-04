@@ -83,21 +83,30 @@ void DrawingScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
 void DrawingScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
     if (drawing_ && event->button() == Qt::LeftButton) {
         const QPointF endPos = snapPoint(event->scenePos());
+        auto dist = [](const QPointF& a, const QPointF& b){ return std::hypot(a.x()-b.x(), a.y()-b.y()); };
+        const qreal eps = 1.0; // 最小尺寸阈值（像素）
         switch (mode_) {
         case Mode::Line: {
             if (previewLine_) { removeItem(previewLine_); delete previewLine_; previewLine_ = nullptr; }
-            addItem(new ShapeItem(std::make_unique<LineSegment>(startPos_, endPos)));
+            if (dist(startPos_, endPos) >= eps) {
+                addItem(new ShapeItem(std::make_unique<LineSegment>(startPos_, endPos)));
+            }
             break;
         }
         case Mode::Rect: {
             if (previewRect_) { removeItem(previewRect_); delete previewRect_; previewRect_ = nullptr; }
-            addItem(new ShapeItem(std::make_unique<Rectangle>(QRectF(startPos_, endPos).normalized())));
+            QRectF r = QRectF(startPos_, endPos).normalized();
+            if (r.width() >= eps && r.height() >= eps) {
+                addItem(new ShapeItem(std::make_unique<Rectangle>(r)));
+            }
             break;
         }
         case Mode::Circle: {
             if (previewCircle_) { removeItem(previewCircle_); delete previewCircle_; previewCircle_ = nullptr; }
             const qreal r = std::hypot(endPos.x() - startPos_.x(), endPos.y() - startPos_.y());
-            addItem(new ShapeItem(std::make_unique<Circle>(startPos_, r)));
+            if (r >= eps) {
+                addItem(new ShapeItem(std::make_unique<Circle>(startPos_, r)));
+            }
             break;
         }
         default:
