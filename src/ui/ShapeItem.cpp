@@ -5,7 +5,10 @@
 ShapeItem::ShapeItem(std::unique_ptr<Shape> shape, QGraphicsItem* parent)
     : QGraphicsItem(parent), shape_(std::move(shape)) {
     setFlag(ItemIsSelectable, true);
-    setFlag(ItemIsMovable, false); // 移动交互后续开启
+    setFlag(ItemIsMovable, true);
+    // 使用模型中的平移初始化项位置
+    const auto& t = shape_->transform();
+    setPos(t.m31(), t.m32());
 }
 
 QRectF ShapeItem::boundingRect() const {
@@ -42,4 +45,3 @@ void ShapeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
         return;
     }
 }
-

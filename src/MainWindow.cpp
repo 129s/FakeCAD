@@ -101,7 +101,12 @@ void MainWindow::onSave() {
     if (path.isEmpty()) return;
     std::vector<Shape*> shapes;
     for (auto* item : scene->items()) {
-        if (auto* si = dynamic_cast<ShapeItem*>(item)) shapes.push_back(si->shape());
+        if (auto* si = dynamic_cast<ShapeItem*>(item)) {
+            // 同步项位置到模型（仅平移）
+            const auto p = si->pos();
+            si->shape()->MoveTo(p.x(), p.y());
+            shapes.push_back(si->shape());
+        }
     }
     QString err;
     if (Ser::SaveToFile(path, shapes, &err)) {
@@ -125,9 +130,7 @@ void MainWindow::onOpen() {
     }
     scene->clear();
     for (auto& sp : shapes) {
-        if (dynamic_cast<LineSegment*>(sp.get()) || dynamic_cast<Rectangle*>(sp.get()) || dynamic_cast<Circle*>(sp.get())) {
-            scene->addItem(new ShapeItem(std::move(sp)));
-        }
+        scene->addItem(new ShapeItem(std::move(sp)));
     }
     statusBar()->showMessage(tr("已加载: %1").arg(path), 3000);
 }
