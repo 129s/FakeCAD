@@ -35,6 +35,7 @@
 - [x] 实现基础三形模型（线/矩形/圆）
 - [x] Circle/Rectangle/LineSegment 模型与视图适配器
 - [x] JSON 保存/加载（基础字段）
+- [x] 绘制流程（点击/拖拽创建）：线段、矩形、圆
 - [ ] 选择/移动交互与属性面板
 - [x] 长度/周长/面积计算与渲染标注
 - [ ] Triangle/Polygon/Polyline/Ellipse 完整实现
