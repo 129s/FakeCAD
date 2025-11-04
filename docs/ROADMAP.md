@@ -33,7 +33,7 @@
 - [x] 引入 QGraphicsView/Scene 画布
 - [x] 定义抽象类与通用属性/方法
 - [x] 实现基础三形模型（线/矩形/圆）
-- [ ] Circle/Rectangle/LineSegment 模型与视图适配器
+- [x] Circle/Rectangle/LineSegment 模型与视图适配器
 - [ ] JSON 保存/加载（基础字段）
 - [ ] 选择/移动交互与属性面板
 - [ ] 长度/周长/面积计算与渲染标注
