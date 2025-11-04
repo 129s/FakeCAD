@@ -19,10 +19,12 @@ public:
     const QRectF& rect() const { return rect_; }
     void setRect(const QRectF& r) { rect_ = r; }
 
+    QJsonObject ToJson() const override;
+    static std::unique_ptr<Rectangle> FromJson(const QJsonObject& obj);
+
     static int Count() { return kCount.load(); }
 
 private:
     QRectF rect_;
     inline static std::atomic<int> kCount{0};
 };
-

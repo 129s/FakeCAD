@@ -8,12 +8,14 @@
 #include <QMessageBox>
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QFileDialog>
 #include <memory>
 
 #include "ui/ShapeItem.h"
 #include "core/shapes/LineSegment.h"
 #include "core/shapes/Rectangle.h"
 #include "core/shapes/Circle.h"
+#include "core/Serialization.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
@@ -94,9 +96,38 @@ void MainWindow::createStatusbar() {
 }
 
 void MainWindow::onNew() { statusBar()->showMessage(tr("新建工程（待实现）"), 2000); }
-void MainWindow::onOpen() { statusBar()->showMessage(tr("打开文件（待实现）"), 2000); }
-void MainWindow::onSave() { statusBar()->showMessage(tr("保存文件（待实现）"), 2000); }
+void MainWindow::onSave() {
+    const auto path = QFileDialog::getSaveFileName(this, tr("保存为"), QString(), tr("FakeCAD JSON (*.json)"));
+    if (path.isEmpty()) return;
+    std::vector<Shape*> shapes;
+    for (auto* item : scene->items()) {
+        if (auto* si = dynamic_cast<ShapeItem*>(item)) shapes.push_back(si->shape());
+    }
+    QString err;
+    if (Ser::SaveToFile(path, shapes, &err)) {
+        statusBar()->showMessage(tr("已保存: %1").arg(path), 3000);
+    } else {
+        QMessageBox::warning(this, tr("保存失败"), err);
+    }
+}
 void MainWindow::onExit() { QApplication::quit(); }
 void MainWindow::onAbout() {
     QMessageBox::about(this, tr("关于 FakeCAD"), tr("FakeCAD\nC++17 / CMake / Qt6"));
+}
+void MainWindow::onOpen() {
+    const auto path = QFileDialog::getOpenFileName(this, tr("打开"), QString(), tr("FakeCAD JSON (*.json)"));
+    if (path.isEmpty()) return;
+    QString err;
+    auto shapes = Ser::LoadFromFile(path, &err);
+    if (!err.isEmpty()) {
+        QMessageBox::warning(this, tr("打开失败"), err);
+        return;
+    }
+    scene->clear();
+    for (auto& sp : shapes) {
+        if (dynamic_cast<LineSegment*>(sp.get()) || dynamic_cast<Rectangle*>(sp.get()) || dynamic_cast<Circle*>(sp.get())) {
+            scene->addItem(new ShapeItem(std::move(sp)));
+        }
+    }
+    statusBar()->showMessage(tr("已加载: %1").arg(path), 3000);
 }

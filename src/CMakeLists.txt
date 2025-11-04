@@ -9,6 +9,8 @@ add_executable(${TARGET_NAME}
     ui/ShapeItem.cpp
     core/Shape.h
     core/Shape.cpp
+    core/Serialization.h
+    core/Serialization.cpp
     core/shapes/LineSegment.h
     core/shapes/LineSegment.cpp
     core/shapes/Rectangle.h
@@ -36,4 +38,3 @@ else()
 endif()
 
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DPI_AWARE "PerMonitorV2")
-

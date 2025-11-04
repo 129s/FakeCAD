@@ -17,6 +17,9 @@ public:
 
     QRectF BoundingBox() const override;
 
+    QJsonObject ToJson() const override;
+    static std::unique_ptr<LineSegment> FromJson(const QJsonObject& obj);
+
     // 端点访问
     const QPointF& p1() const { return p1_; }
     const QPointF& p2() const { return p2_; }
@@ -30,4 +33,3 @@ private:
     QPointF p2_;
     inline static std::atomic<int> kCount{0};
 };
-

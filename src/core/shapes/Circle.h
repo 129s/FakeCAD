@@ -25,6 +25,9 @@ public:
     void setCenter(const QPointF& c) { center_ = c; }
     void setRadius(double r) { radius_ = r; }
 
+    QJsonObject ToJson() const override;
+    static std::unique_ptr<Circle> FromJson(const QJsonObject& obj);
+
     static int Count() { return kCount.load(); }
 
 private:
@@ -32,4 +35,3 @@ private:
     double radius_{};
     inline static std::atomic<int> kCount{0};
 };
-
