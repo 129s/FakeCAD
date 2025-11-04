@@ -31,7 +31,7 @@
 - [x] 初始化 CMake 项目（Qt6 Widgets 模板）
 - [x] 搭建基础 UI（主窗体、菜单、工具栏、状态栏）
 - [x] 引入 QGraphicsView/Scene 画布
-- [ ] 定义抽象类与通用属性/方法
+- [x] 定义抽象类与通用属性/方法
 - [ ] Circle/Rectangle/LineSegment 模型与视图适配器
 - [ ] JSON 保存/加载（基础字段）
 - [ ] 选择/移动交互与属性面板
