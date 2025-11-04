@@ -17,10 +17,19 @@ public:
     void setMode(Mode m);
     Mode mode() const { return mode_; }
 
+    // Grid & snapping
+    void setShowGrid(bool v) { showGrid_ = v; update(); }
+    bool showGrid() const { return showGrid_; }
+    void setSnapToGrid(bool v) { snapToGrid_ = v; }
+    bool snapToGrid() const { return snapToGrid_; }
+    void setGridSize(qreal s) { gridSize_ = s; update(); }
+    qreal gridSize() const { return gridSize_; }
+
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+    void drawBackground(QPainter* painter, const QRectF& rect) override;
 
 private:
     Mode mode_ { Mode::None };
@@ -32,5 +41,10 @@ private:
     QGraphicsEllipseItem* previewCircle_ { nullptr };
 
     void clearPreview();
-};
+    QPointF snapPoint(const QPointF& p) const;
 
+    // grid settings
+    bool showGrid_ { true };
+    bool snapToGrid_ { false };
+    qreal gridSize_ { 20.0 };
+};

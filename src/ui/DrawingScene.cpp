@@ -31,7 +31,7 @@ void DrawingScene::clearPreview() {
 void DrawingScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
     if (event->button() == Qt::LeftButton && mode_ != Mode::None) {
         drawing_ = true;
-        startPos_ = event->scenePos();
+        startPos_ = snapPoint(event->scenePos());
         switch (mode_) {
         case Mode::Line:
             previewLine_ = addLine(QLineF(startPos_, startPos_), QPen(Qt::darkGray, 1, Qt::DashLine));
@@ -53,7 +53,7 @@ void DrawingScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
 
 void DrawingScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
     if (drawing_) {
-        const QPointF cur = event->scenePos();
+        const QPointF cur = snapPoint(event->scenePos());
         switch (mode_) {
         case Mode::Line:
             if (previewLine_) previewLine_->setLine(QLineF(startPos_, cur));
@@ -81,7 +81,7 @@ void DrawingScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
 
 void DrawingScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
     if (drawing_ && event->button() == Qt::LeftButton) {
-        const QPointF endPos = event->scenePos();
+        const QPointF endPos = snapPoint(event->scenePos());
         switch (mode_) {
         case Mode::Line: {
             if (previewLine_) { removeItem(previewLine_); delete previewLine_; previewLine_ = nullptr; }
@@ -109,3 +109,23 @@ void DrawingScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
     QGraphicsScene::mouseReleaseEvent(event);
 }
 
+QPointF DrawingScene::snapPoint(const QPointF& p) const {
+    if (!snapToGrid_) return p;
+    const qreal s = gridSize_ <= 0 ? 1.0 : gridSize_;
+    const qreal x = std::round(p.x() / s) * s;
+    const qreal y = std::round(p.y() / s) * s;
+    return QPointF(x, y);
+}
+
+void DrawingScene::drawBackground(QPainter* painter, const QRectF& rect) {
+    QGraphicsScene::drawBackground(painter, rect);
+    if (!showGrid_) return;
+    const qreal s = gridSize_ <= 0 ? 20.0 : gridSize_;
+    painter->save();
+    painter->setPen(QPen(QColor(230,230,230)));
+    const qreal left = std::floor(rect.left() / s) * s;
+    const qreal top  = std::floor(rect.top() / s) * s;
+    for (qreal x = left; x < rect.right(); x += s) painter->drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()));
+    for (qreal y = top;  y < rect.bottom(); y += s) painter->drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y));
+    painter->restore();
+}

@@ -9,6 +9,8 @@ add_executable(${TARGET_NAME}
     ui/ShapeItem.cpp
     ui/DrawingScene.h
     ui/DrawingScene.cpp
+    ui/CanvasView.h
+    ui/CanvasView.cpp
     ui/ControlPointItem.h
     ui/ControlPointItem.cpp
     ui/PropertyPanel.h

@@ -20,6 +20,19 @@ public:
             showHandles(sel);
         } else if (change == ItemRotationHasChanged) {
             updateHandles();
+        } else if (change == ItemPositionChange) {
+            // 位置吸附到网格
+            if (scene()) {
+                if (auto ds = dynamic_cast<class DrawingScene*>(scene())) {
+                    if (ds->snapToGrid()) {
+                        QPointF p = value.toPointF();
+                        const qreal s = ds->gridSize();
+                        p.setX(std::round(p.x()/s)*s);
+                        p.setY(std::round(p.y()/s)*s);
+                        return p;
+                    }
+                }
+            }
         }
         return QGraphicsItem::itemChange(change, value);
     }

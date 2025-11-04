@@ -9,7 +9,7 @@ public:
     ~MainWindow() override = default;
 private:
     // 画布
-    class QGraphicsView* view{};
+    class CanvasView* view{};
     class DrawingScene* scene{};
 private:
     // actions
@@ -25,6 +25,8 @@ private:
     QAction* actDrawRect{};
     QAction* actDrawCircle{};
     class QActionGroup* drawGroup{};
+    QAction* actToggleGrid{};
+    QAction* actSnapGrid{};
     QAction* actAbout{};
 
     // ui builders

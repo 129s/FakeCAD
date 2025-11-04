@@ -15,6 +15,7 @@
 
 #include "ui/ShapeItem.h"
 #include "ui/DrawingScene.h"
+#include "ui/CanvasView.h"
 #include "ui/PropertyPanel.h"
 #include "core/shapes/LineSegment.h"
 #include "core/shapes/Rectangle.h"
@@ -34,9 +35,11 @@ MainWindow::MainWindow(QWidget* parent)
     scene = new DrawingScene(this);
     scene->setSceneRect(-5000, -5000, 10000, 10000);
 
-    view = new QGraphicsView(scene, this);
-    view->setRenderHint(QPainter::Antialiasing, true);
+    view = new CanvasView(scene, this);
     view->setDragMode(QGraphicsView::RubberBandDrag);
+    connect(view, &CanvasView::mouseScenePosChanged, this, [this](const QPointF& p){
+        statusBar()->showMessage(tr("坐标: (%1, %2)").arg(p.x(), 0, 'f', 1).arg(p.y(), 0, 'f', 1));
+    });
     setCentralWidget(view);
 
     // 示例元素（基于模型的适配器）
@@ -92,6 +95,17 @@ void MainWindow::createActions() {
     connect(actDrawLine, &QAction::toggled, this, &MainWindow::onDrawLineToggled);
     connect(actDrawRect, &QAction::toggled, this, &MainWindow::onDrawRectToggled);
     connect(actDrawCircle, &QAction::toggled, this, &MainWindow::onDrawCircleToggled);
+
+    // 视图选项
+    actToggleGrid = new QAction(tr("显示网格"), this);
+    actToggleGrid->setCheckable(true);
+    actToggleGrid->setChecked(true);
+    connect(actToggleGrid, &QAction::toggled, this, [this](bool on){ scene->setShowGrid(on); });
+
+    actSnapGrid = new QAction(tr("吸附到网格"), this);
+    actSnapGrid->setCheckable(true);
+    actSnapGrid->setChecked(false);
+    connect(actSnapGrid, &QAction::toggled, this, [this](bool on){ scene->setSnapToGrid(on); });
 }
 
 void MainWindow::createMenus() {
@@ -105,6 +119,9 @@ void MainWindow::createMenus() {
     auto viewMenu = menuBar()->addMenu(tr("视图"));
     viewMenu->addAction(actZoomIn);
     viewMenu->addAction(actZoomOut);
+    viewMenu->addSeparator();
+    viewMenu->addAction(actToggleGrid);
+    viewMenu->addAction(actSnapGrid);
 
     auto helpMenu = menuBar()->addMenu(tr("帮助"));
     helpMenu->addAction(actAbout);
@@ -119,6 +136,8 @@ void MainWindow::createToolbars() {
     auto viewBar = addToolBar(tr("视图"));
     viewBar->addAction(actZoomIn);
     viewBar->addAction(actZoomOut);
+    viewBar->addAction(actToggleGrid);
+    viewBar->addAction(actSnapGrid);
 
     auto drawBar = addToolBar(tr("绘制"));
     drawBar->addAction(actSelect);

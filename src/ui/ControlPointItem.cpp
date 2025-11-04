@@ -44,18 +44,29 @@ void ControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
         owner_->updateHandles();
         return; // 不调用基类移动，以免把手柄位置改乱
     }
-    // 非旋转手柄：将现场坐标映射到父项局部坐标
-    const QPointF local = owner_->mapFromScene(event->scenePos());
+    // 非旋转手柄：将现场坐标映射到父项局部坐标（考虑吸附）
+    QPointF sp = event->scenePos();
+    if (owner_->scene()) {
+        if (auto ds = dynamic_cast<class DrawingScene*>(owner_->scene())) {
+            sp = ds->snapPoint(sp);
+        }
+    }
+    const QPointF local = owner_->mapFromScene(sp);
     owner_->handleMoved(static_cast<ShapeItem::HandleKind>(kind_), index_, local, event->scenePos(), false);
     owner_->updateHandles();
 }
 
 void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
     if (kind_ != Kind::Rotation) {
-        const QPointF local = owner_->mapFromScene(event->scenePos());
+        QPointF sp = event->scenePos();
+        if (owner_->scene()) {
+            if (auto ds = dynamic_cast<class DrawingScene*>(owner_->scene())) {
+                sp = ds->snapPoint(sp);
+            }
+        }
+        const QPointF local = owner_->mapFromScene(sp);
         owner_->handleMoved(static_cast<ShapeItem::HandleKind>(kind_), index_, local, event->scenePos(), true);
         owner_->updateHandles();
     }
     QGraphicsRectItem::mouseReleaseEvent(event);
 }
-
