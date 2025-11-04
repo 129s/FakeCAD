@@ -20,6 +20,7 @@ private:
 
     QAction* actZoomIn{};
     QAction* actZoomOut{};
+    QAction* actResetZoom{};
     QAction* actSelect{};
     QAction* actDrawLine{};
     QAction* actDrawRect{};
@@ -27,6 +28,7 @@ private:
     class QActionGroup* drawGroup{};
     QAction* actToggleGrid{};
     QAction* actSnapGrid{};
+    QAction* actDelete{};
     QAction* actAbout{};
 
     // ui builders
@@ -47,6 +49,10 @@ private slots:
     void onDrawLineToggled(bool on);
     void onDrawRectToggled(bool on);
     void onDrawCircleToggled(bool on);
+    void onZoomIn();
+    void onZoomOut();
+    void onResetZoom();
+    void onDelete();
     void onSelectionChanged();
 
 private:

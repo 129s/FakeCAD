@@ -66,6 +66,13 @@ void MainWindow::createActions() {
 
     actZoomIn = new QAction(tr("放大"), this);
     actZoomOut = new QAction(tr("缩小"), this);
+    actResetZoom = new QAction(tr("重置缩放"), this);
+    actZoomIn->setShortcut(QKeySequence::ZoomIn);
+    actZoomOut->setShortcut(QKeySequence::ZoomOut);
+    actResetZoom->setShortcut(QKeySequence(tr("Ctrl+0")));
+    connect(actZoomIn, &QAction::triggered, this, &MainWindow::onZoomIn);
+    connect(actZoomOut, &QAction::triggered, this, &MainWindow::onZoomOut);
+    connect(actResetZoom, &QAction::triggered, this, &MainWindow::onResetZoom);
     // 暂留快捷键，等画布接入后启用
 
     actAbout = new QAction(tr("关于"), this);
@@ -81,6 +88,10 @@ void MainWindow::createActions() {
     actDrawLine->setCheckable(true);
     actDrawRect->setCheckable(true);
     actDrawCircle->setCheckable(true);
+    actSelect->setShortcut(QKeySequence(tr("1")));
+    actDrawLine->setShortcut(QKeySequence(tr("2")));
+    actDrawRect->setShortcut(QKeySequence(tr("3")));
+    actDrawCircle->setShortcut(QKeySequence(tr("4")));
 
     drawGroup = new QActionGroup(this);
     drawGroup->setExclusive(true);
@@ -96,16 +107,27 @@ void MainWindow::createActions() {
     connect(actDrawRect, &QAction::toggled, this, &MainWindow::onDrawRectToggled);
     connect(actDrawCircle, &QAction::toggled, this, &MainWindow::onDrawCircleToggled);
 
+    // Esc 返回选择
+    auto escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    connect(escShortcut, &QShortcut::activated, this, [this]{ actSelect->setChecked(true); });
+
     // 视图选项
     actToggleGrid = new QAction(tr("显示网格"), this);
     actToggleGrid->setCheckable(true);
     actToggleGrid->setChecked(true);
+    actToggleGrid->setShortcut(QKeySequence(tr("G")));
     connect(actToggleGrid, &QAction::toggled, this, [this](bool on){ scene->setShowGrid(on); });
 
     actSnapGrid = new QAction(tr("吸附到网格"), this);
     actSnapGrid->setCheckable(true);
     actSnapGrid->setChecked(false);
+    actSnapGrid->setShortcut(QKeySequence(tr("Shift+G")));
     connect(actSnapGrid, &QAction::toggled, this, [this](bool on){ scene->setSnapToGrid(on); });
+
+    // 删除选中
+    actDelete = new QAction(tr("删除选中"), this);
+    actDelete->setShortcut(QKeySequence::Delete);
+    connect(actDelete, &QAction::triggered, this, &MainWindow::onDelete);
 }
 
 void MainWindow::createMenus() {
@@ -116,9 +138,13 @@ void MainWindow::createMenus() {
     fileMenu->addSeparator();
     fileMenu->addAction(actExit);
 
+    auto editMenu = menuBar()->addMenu(tr("编辑"));
+    editMenu->addAction(actDelete);
+
     auto viewMenu = menuBar()->addMenu(tr("视图"));
     viewMenu->addAction(actZoomIn);
     viewMenu->addAction(actZoomOut);
+    viewMenu->addAction(actResetZoom);
     viewMenu->addSeparator();
     viewMenu->addAction(actToggleGrid);
     viewMenu->addAction(actSnapGrid);
@@ -136,6 +162,7 @@ void MainWindow::createToolbars() {
     auto viewBar = addToolBar(tr("视图"));
     viewBar->addAction(actZoomIn);
     viewBar->addAction(actZoomOut);
+    viewBar->addAction(actResetZoom);
     viewBar->addAction(actToggleGrid);
     viewBar->addAction(actSnapGrid);
 
@@ -237,6 +264,18 @@ void MainWindow::onDrawCircleToggled(bool on) {
     if (!on) return;
     scene->setMode(DrawingScene::Mode::Circle);
     updateViewDragMode();
+}
+
+void MainWindow::onZoomIn() { view->scale(1.15, 1.15); }
+void MainWindow::onZoomOut() { view->scale(1.0/1.15, 1.0/1.15); }
+void MainWindow::onResetZoom() { view->resetTransform(); }
+
+void MainWindow::onDelete() {
+    auto items = scene->selectedItems();
+    for (auto* it : items) {
+        scene->removeItem(it);
+        delete it;
+    }
 }
 
 void MainWindow::onSelectionChanged() {
