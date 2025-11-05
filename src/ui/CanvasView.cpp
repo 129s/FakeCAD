@@ -5,6 +5,25 @@
 #include <QKeyEvent>
 #include <algorithm>
 
+bool CanvasView::viewportEvent(QEvent* event) {
+    if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
+        auto* me = static_cast<QMouseEvent*>(event);
+        // 在最早的 viewportEvent 层屏蔽中键相关事件，避免底层改变手型光标/触发拖拽
+        if ((event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease) && me->button() == Qt::MiddleButton) {
+            unsetCursor();
+            event->accept();
+            return true;
+        }
+        if (event->type() == QEvent::MouseMove && (me->buttons() & Qt::MiddleButton)) {
+            if (scene()) emit mouseScenePosChanged(mapToScene(me->pos()));
+            unsetCursor();
+            event->accept();
+            return true;
+        }
+    }
+    return QGraphicsView::viewportEvent(event);
+}
+
 CanvasView::CanvasView(QWidget* parent)
     : QGraphicsView(parent) {
     setRenderHint(QPainter::Antialiasing, true);
