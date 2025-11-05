@@ -56,3 +56,20 @@ else()
 endif()
 
 set_property(TARGET ${TARGET_NAME} PROPERTY VS_DPI_AWARE "PerMonitorV2")
+
+# ---------------------------
+# 安装规则
+# 将可执行文件安装到前缀根目录（便于 windeployqt 就地部署依赖）
+# 同时在 Debug/RelWithDebInfo 下安装 PDB（如存在）。
+# ---------------------------
+install(TARGETS ${TARGET_NAME}
+    RUNTIME DESTINATION .
+    BUNDLE  DESTINATION .
+    LIBRARY DESTINATION .
+    ARCHIVE DESTINATION .
+)
+
+# 安装 PDB（可选）
+if (MSVC)
+    install(FILES $<TARGET_PDB_FILE:${TARGET_NAME}> DESTINATION . OPTIONAL)
+endif()

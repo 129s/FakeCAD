@@ -1,4 +1,5 @@
 #include "Polyline.h"
+#include <QJsonArray>
 
 QJsonObject Polyline::ToJson() const {
     QJsonObject obj = Shape::ToJson();
@@ -21,4 +22,3 @@ std::unique_ptr<Polyline> Polyline::FromJson(const QJsonObject& obj) {
     s->FromJsonCommon(obj);
     return s;
 }
-

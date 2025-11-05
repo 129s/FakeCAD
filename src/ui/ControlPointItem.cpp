@@ -5,6 +5,7 @@
 #include <QtMath>
 
 #include "DrawingScene.h"
+#include <QCursor>
 
 #include "ShapeItem.h"
 #include "../undo/Commands.h"
@@ -18,7 +19,7 @@ ControlPointItem::ControlPointItem(ShapeItem* owner, Kind kind, int index, const
     setPen(QPen(Qt::black));
     setFlag(ItemIsMovable, true);
     setFlag(ItemIgnoresTransformations, true);
-    setCursor(Qt::SizeAllCursor);
+    setCursor(QCursor(Qt::SizeAllCursor));
 }
 
 void ControlPointItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
@@ -31,8 +32,8 @@ void ControlPointItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
         QPointF centerLocal = owner_->boundingRect().center();
         centerScene_ = owner_->mapToScene(centerLocal);
     } else {
-        if (owner_ && owner_->shape()) {
-            oldJson_ = owner_->shape()->ToJson();
+        if (owner_ && owner_->model()) {
+            oldJson_ = owner_->model()->ToJson();
         }
     }
 }
@@ -48,7 +49,7 @@ void ControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
         qreal delta = a1 - a0;
         owner_->setRotation(initialOwnerRotation_ + delta);
         // 同步模型角度
-        owner_->shape()->setRotationDegrees(owner_->rotation());
+        owner_->model()->setRotationDegrees(owner_->rotation());
         owner_->updateHandles();
         return; // 不调用基类移动，以免把手柄位置改乱
     }
@@ -75,8 +76,8 @@ void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
         const QPointF local = owner_->mapFromScene(sp);
         owner_->handleMoved(static_cast<ShapeItem::HandleKind>(kind_), index_, local, event->scenePos(), true);
         owner_->updateHandles();
-        if (owner_ && owner_->shape()) {
-            QJsonObject neo = owner_->shape()->ToJson();
+        if (owner_ && owner_->model()) {
+            QJsonObject neo = owner_->model()->ToJson();
             if (auto ds = dynamic_cast<class DrawingScene*>(owner_->scene())) {
                 if (auto st = ds->undoStack()) {
                     st->push(new UndoCmd::EditShapeJsonCommand(owner_, oldJson_, neo));

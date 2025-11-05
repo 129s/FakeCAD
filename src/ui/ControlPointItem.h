@@ -2,6 +2,7 @@
 
 #include <QGraphicsRectItem>
 #include <QPointF>
+#include <QJsonObject>
 
 class ShapeItem;
 

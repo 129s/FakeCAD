@@ -63,7 +63,7 @@ void PropertyPanel::refreshFromTarget() {
         updating_ = false;
         return;
     }
-    auto* s = target_->shape();
+    auto* s = target_->model();
     lblType_->setText(tr("类型: %1").arg(s->typeName()));
     nameEdit_->setText(s->name());
     colorBtn_->setEnabled(true);
@@ -83,33 +83,33 @@ void PropertyPanel::applyColorToButton(const QColor& c) {
 
 void PropertyPanel::onNameEdited(const QString& text) {
     if (updating_ || !target_) return;
-    target_->shape()->setName(text);
+    target_->model()->setName(text);
     target_->update();
 }
 
 void PropertyPanel::onPenWidthChanged(double w) {
     if (updating_ || !target_) return;
-    auto p = target_->shape()->pen();
+    auto p = target_->model()->pen();
     p.setWidthF(w);
-    target_->shape()->setPen(p);
+    target_->model()->setPen(p);
     target_->update();
 }
 
 void PropertyPanel::onColorClicked() {
     if (!target_) return;
-    const QColor cur = target_->shape()->pen().color();
+    const QColor cur = target_->model()->pen().color();
     QColor c = QColorDialog::getColor(cur, this, tr("选择颜色"));
     if (!c.isValid()) return;
-    auto p = target_->shape()->pen();
+    auto p = target_->model()->pen();
     p.setColor(c);
-    target_->shape()->setPen(p);
+    target_->model()->setPen(p);
     applyColorToButton(c);
     target_->update();
 }
 
 void PropertyPanel::onRotationChanged(double deg) {
     if (updating_ || !target_) return;
-    target_->shape()->setRotationDegrees(deg);
+    target_->model()->setRotationDegrees(deg);
     target_->setRotation(deg);
     target_->updateHandles();
 }

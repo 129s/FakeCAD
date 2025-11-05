@@ -23,7 +23,7 @@ void AddShapeCommand::redo() {
 void AddShapeCommand::undo() {
     if (item_) {
         scene_->removeItem(item_);
-        delete item_.data();
+        delete item_;
         item_ = nullptr;
     }
 }
@@ -36,7 +36,7 @@ void DeleteShapesCommand::redo() {
     if (!items_.empty()) {
         // 已经创建过，直接删
         for (auto& it : items_) {
-            if (it) { scene_->removeItem(it); delete it.data(); }
+            if (it) { scene_->removeItem(it); delete it; }
         }
         items_.clear();
         return;
@@ -50,7 +50,7 @@ void DeleteShapesCommand::redo() {
     }
     for (auto& it : items_) { scene_->removeItem(it); }
     // 延后统一删除以避免迭代失效
-    for (auto& it : items_) { delete it.data(); }
+    for (auto& it : items_) { delete it; }
     items_.clear();
 }
 
@@ -72,9 +72,9 @@ void TransformShapeCommand::apply(const QPointF& pos, double rot) {
     if (!item_) return;
     item_->setPos(pos);
     item_->setRotation(rot);
-    if (item_->shape()) {
-        item_->shape()->MoveTo(pos.x(), pos.y());
-        item_->shape()->setRotationDegrees(rot);
+    if (item_->model()) {
+        item_->model()->MoveTo(pos.x(), pos.y());
+        item_->model()->setRotationDegrees(rot);
     }
     item_->updateHandles();
 }
@@ -86,13 +86,12 @@ EditShapeJsonCommand::EditShapeJsonCommand(ShapeItem* item, const QJsonObject& o
     : QUndoCommand(QObject::tr("编辑几何"), parent), item_(item), old_(oldJ), neo_(newJ) {}
 
 void EditShapeJsonCommand::apply(const QJsonObject& j) {
-    if (!item_ || !item_->shape()) return;
-    Ser::ApplyJsonToShape(item_->shape(), j);
-    item_->prepareGeometryChange();
+    if (!item_ || !item_->model()) return;
+    Ser::ApplyJsonToShape(item_->model(), j);
+    item_->geometryChanged();
     item_->updateHandles();
     item_->update();
 }
 
 void EditShapeJsonCommand::redo() { apply(neo_); }
 void EditShapeJsonCommand::undo() { apply(old_); }
-

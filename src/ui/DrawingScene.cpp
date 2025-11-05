@@ -5,6 +5,7 @@
 #include <QGraphicsRectItem>
 #include <QGraphicsEllipseItem>
 #include <QtMath>
+#include <QPainter>
 #include <cmath>
 
 #include "ShapeItem.h"

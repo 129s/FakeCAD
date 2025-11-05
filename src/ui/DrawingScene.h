@@ -3,6 +3,8 @@
 #include <QGraphicsScene>
 #include <QPointF>
 
+class QUndoStack;
+
 class QGraphicsLineItem;
 class QGraphicsRectItem;
 class QGraphicsEllipseItem;
@@ -25,6 +27,8 @@ public:
     void setGridSize(qreal s) { gridSize_ = s; update(); }
     qreal gridSize() const { return gridSize_; }
     QPointF snapPoint(const QPointF& p) const;
+    void setUndoStack(QUndoStack* s) { undo_ = s; }
+    QUndoStack* undoStack() const { return undo_; }
 
  protected:
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
@@ -51,5 +55,3 @@ private:
 
     class QUndoStack* undo_ { nullptr };
 };
-    void setUndoStack(class QUndoStack* s) { undo_ = s; }
-    class QUndoStack* undoStack() const { return undo_; }

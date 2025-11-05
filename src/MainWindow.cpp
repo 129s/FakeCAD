@@ -29,15 +29,17 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
     setWindowTitle(QStringLiteral("FakeCAD"));
 
+    // 先创建撤销栈，菜单中会用到
+    undo_ = new QUndoStack(this);
+
     createActions();
     createMenus();
     createToolbars();
     createStatusbar();
-    createPropertyDock();
 
+    // 先有 scene/view，再创建依赖其信号的面板/停靠栏
     scene = new DrawingScene(this);
     scene->setSceneRect(-5000, -5000, 10000, 10000);
-    undo_ = new QUndoStack(this);
     scene->setUndoStack(undo_);
 
     view = new CanvasView(scene, this);
@@ -46,6 +48,8 @@ MainWindow::MainWindow(QWidget* parent)
         statusBar()->showMessage(tr("坐标: (%1, %2)").arg(p.x(), 0, 'f', 1).arg(p.y(), 0, 'f', 1));
     });
     setCentralWidget(view);
+
+    createPropertyDock();
 
     // 示例元素（基于模型的适配器）
     scene->addItem(new ShapeItem(std::make_unique<LineSegment>(QPointF(-100, -80), QPointF(150, 60))));
@@ -200,6 +204,7 @@ void MainWindow::createPropertyDock() {
     propDock = new QDockWidget(tr("属性"), this);
     propDock->setWidget(propPanel);
     addDockWidget(Qt::RightDockWidgetArea, propDock);
+    // 依赖 scene 已创建
     connect(scene, &QGraphicsScene::selectionChanged, this, &MainWindow::onSelectionChanged);
 }
 
@@ -212,9 +217,9 @@ void MainWindow::onSave() {
         if (auto* si = dynamic_cast<ShapeItem*>(item)) {
             // 同步项位置到模型（仅平移）
             const auto p = si->pos();
-            si->shape()->MoveTo(p.x(), p.y());
-            si->shape()->setRotationDegrees(si->rotation());
-            shapes.push_back(si->shape());
+            si->model()->MoveTo(p.x(), p.y());
+            si->model()->setRotationDegrees(si->rotation());
+            shapes.push_back(si->model());
         }
     }
     QString err;
@@ -301,7 +306,7 @@ void MainWindow::onDelete() {
     std::vector<QJsonObject> snap;
     for (auto* it : scene->selectedItems()) {
         if (auto* si = dynamic_cast<ShapeItem*>(it)) {
-            snap.push_back(si->shape()->ToJson());
+            snap.push_back(si->model()->ToJson());
         }
     }
     if (!snap.empty() && undo_) {

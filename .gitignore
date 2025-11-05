@@ -1,6 +1,7 @@
 # Build directories
 build/
 out/
+dist/
 
 # CMake
 CMakeCache.txt
@@ -17,4 +18,3 @@ compile_commands.json
 
 # Mac
 .DS_Store
-

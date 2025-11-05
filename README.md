@@ -40,6 +40,31 @@ cmake --build build -j
 运行：
 - 可执行文件位于 `build/` 目录（待项目骨架创建后生效）。
 
+## 打包/发布（Windows）
+- 目标：生成包含 Qt 运行时依赖的独立包（Release/Debug）。
+- 前置：确保系统可找到 `windeployqt.exe`（将 Qt 的 `bin` 目录加入 PATH，或在脚本参数中指定）。
+
+步骤：
+- 首次配置（任选其一）：
+  - Ninja 示例：`cmake -S . -B build -G "Ninja" -DCMAKE_PREFIX_PATH="C:\\Qt\\6.6.2\\msvc2022_64"`
+  - VS 示例：`cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_PREFIX_PATH="C:\\Qt\\6.6.2\\msvc2022_64"`
+- 一键打包（默认同时生成 Release/Debug ZIP）：
+
+```
+powershell -ExecutionPolicy Bypass -File scripts/package.ps1
+```
+
+可选参数：
+- `-Config Release` 仅打包某一配置。
+- `-QtBin C:\\Qt\\6.6.2\\msvc2022_64\\bin` 指定 Qt bin 目录（若未在 PATH）。
+- `-Generator "Visual Studio 17 2022"` 首次配置时指定生成器。
+- `-BuildDir build` 指定构建目录。
+- `-DistDir dist` 指定输出目录。
+
+输出：
+- `dist/FakeCAD-<version>-win64-Release.zip`
+- `dist/FakeCAD-<version>-win64-Debug.zip`
+
 ## 目录规划（拟定）
 - `src/`：核心与 UI 源码
 - `include/`：对外头文件（若拆分库）

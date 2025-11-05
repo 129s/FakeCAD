@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QUndoCommand>
-#include <QPointer>
 #include <QJsonObject>
+#include <QPointF>
 #include <vector>
 
 class DrawingScene;
@@ -17,9 +17,9 @@ public:
     void undo() override;
     void redo() override;
 private:
-    QPointer<DrawingScene> scene_;
+    DrawingScene* scene_{};
     QJsonObject json_;
-    QPointer<ShapeItem> item_{};
+    ShapeItem* item_{};
 };
 
 class DeleteShapesCommand : public QUndoCommand {
@@ -28,9 +28,9 @@ public:
     void undo() override;
     void redo() override;
 private:
-    QPointer<DrawingScene> scene_;
+    DrawingScene* scene_{};
     std::vector<QJsonObject> jsons_;
-    std::vector<QPointer<ShapeItem>> items_;
+    std::vector<ShapeItem*> items_;
 };
 
 class TransformShapeCommand : public QUndoCommand {
@@ -39,7 +39,7 @@ public:
     void undo() override;
     void redo() override;
 private:
-    QPointer<ShapeItem> item_;
+    ShapeItem* item_{};
     QPointF oldPos_{}; double oldRot_{};
     QPointF newPos_{}; double newRot_{};
     void apply(const QPointF& pos, double rot);
@@ -51,10 +51,9 @@ public:
     void undo() override;
     void redo() override;
 private:
-    QPointer<ShapeItem> item_;
+    ShapeItem* item_{};
     QJsonObject old_, neo_;
     void apply(const QJsonObject& j);
 };
 
 }
-

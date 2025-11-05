@@ -1,4 +1,5 @@
 #include "Polygon.h"
+#include <QJsonArray>
 
 #include <cmath>
 
@@ -48,4 +49,3 @@ std::unique_ptr<Polygon> Polygon::FromJson(const QJsonObject& obj) {
     s->FromJsonCommon(obj);
     return s;
 }
-
