@@ -212,7 +212,10 @@ void ShapeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
         painter->drawLine(ls->p1(), ls->p2());
         const double L = ls->Length();
         painter->setPen(QPen(Qt::darkGray));
-        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("L=%1").arg(L, 0, 'f', 2));
+        painter->save();
+        painter->setClipRect(boundingRect());
+        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("L=%1").arg(L, 0, 'f', 2));
+        painter->restore();
         return;
     }
     if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
@@ -221,7 +224,10 @@ void ShapeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
         painter->setPen(QPen(Qt::darkGray));
         const double P = rc->Perimeter();
         const double A = rc->Area();
+        painter->save();
+        painter->setClipRect(boundingRect());
         painter->drawText(rc->rect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(P, 0, 'f', 2).arg(A, 0, 'f', 2));
+        painter->restore();
         return;
     }
     if (auto* cc = dynamic_cast<Circle*>(shape_.get())) {
@@ -231,7 +237,10 @@ void ShapeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
         painter->setPen(QPen(Qt::darkGray));
         const double P = cc->Perimeter();
         const double A = cc->Area();
-        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(P, 0, 'f', 2).arg(A, 0, 'f', 2));
+        painter->save();
+        painter->setClipRect(boundingRect());
+        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(P, 0, 'f', 2).arg(A, 0, 'f', 2));
+        painter->restore();
         return;
     }
     if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
@@ -239,28 +248,40 @@ void ShapeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
         QPolygonF poly; poly << tr->p1() << tr->p2() << tr->p3();
         painter->drawPolygon(poly);
         painter->setPen(QPen(Qt::darkGray));
-        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(tr->Perimeter(), 0, 'f', 2).arg(tr->Area(), 0, 'f', 2));
+        painter->save();
+        painter->setClipRect(boundingRect());
+        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(tr->Perimeter(), 0, 'f', 2).arg(tr->Area(), 0, 'f', 2));
+        painter->restore();
         return;
     }
     if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         painter->drawPolygon(QPolygonF(pg->points()));
         painter->setPen(QPen(Qt::darkGray));
-        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(pg->Perimeter(), 0, 'f', 2).arg(pg->Area(), 0, 'f', 2));
+        painter->save();
+        painter->setClipRect(boundingRect());
+        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(pg->Perimeter(), 0, 'f', 2).arg(pg->Area(), 0, 'f', 2));
+        painter->restore();
         return;
     }
     if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         painter->drawPolyline(QPolygonF(pl->points()));
         painter->setPen(QPen(Qt::darkGray));
-        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("L=%1").arg(pl->Length(), 0, 'f', 2));
+        painter->save();
+        painter->setClipRect(boundingRect());
+        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("L=%1").arg(pl->Length(), 0, 'f', 2));
+        painter->restore();
         return;
     }
     if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         painter->drawEllipse(el->center(), el->rx(), el->ry());
         painter->setPen(QPen(Qt::darkGray));
-        painter->drawText(boundingRect().translated(4, -4).topLeft(), QString("P=%1 A=%2").arg(el->Perimeter(), 0, 'f', 2).arg(el->Area(), 0, 'f', 2));
+        painter->save();
+        painter->setClipRect(boundingRect());
+        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(el->Perimeter(), 0, 'f', 2).arg(el->Area(), 0, 'f', 2));
+        painter->restore();
         return;
     }
 }

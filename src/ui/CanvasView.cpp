@@ -28,12 +28,14 @@ CanvasView::CanvasView(QWidget* parent)
     : QGraphicsView(parent) {
     setRenderHint(QPainter::Antialiasing, true);
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
 }
 
 CanvasView::CanvasView(QGraphicsScene* scene, QWidget* parent)
     : QGraphicsView(scene, parent) {
     setRenderHint(QPainter::Antialiasing, true);
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
 }
 
 void CanvasView::wheelEvent(QWheelEvent* event) {
