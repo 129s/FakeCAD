@@ -25,6 +25,11 @@ void CanvasView::wheelEvent(QWheelEvent* event) {
 }
 
 void CanvasView::mousePressEvent(QMouseEvent* event) {
+    if (event->button() == Qt::MiddleButton) {
+        // 显式禁用中键拖拽等残留手势
+        event->accept();
+        return;
+    }
     if (spacePanning_ && event->button() == Qt::LeftButton) {
         setCursor(Qt::ClosedHandCursor);
     }
@@ -32,6 +37,10 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
 }
 
 void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
+    if (event->button() == Qt::MiddleButton) {
+        event->accept();
+        return;
+    }
     if (spacePanning_ && event->button() == Qt::LeftButton) {
         setCursor(Qt::OpenHandCursor);
     }
@@ -39,6 +48,12 @@ void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
 }
 
 void CanvasView::mouseMoveEvent(QMouseEvent* event) {
+    if (event->buttons() & Qt::MiddleButton) {
+        // 屏蔽按住中键移动（不触发任何手势）
+        event->accept();
+        if (scene()) emit mouseScenePosChanged(mapToScene(event->pos()));
+        return;
+    }
     if (scene()) emit mouseScenePosChanged(mapToScene(event->pos()));
     QGraphicsView::mouseMoveEvent(event);
 }
