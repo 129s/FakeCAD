@@ -5,10 +5,15 @@
 #include <QKeyEvent>
 #include <QDebug>
 #include <QGuiApplication>
+#include <QFile>
+#include <QDir>
+#include <QStandardPaths>
+#include <QDateTime>
+#include <QTextStream>
 #include <algorithm>
 
 static bool fc_debug_input_enabled() {
-    static bool on = !qEnvironmentVariableIsEmpty("FAKECAD_DEBUG_INPUT");
+    static bool on = (!qEnvironmentVariableIsEmpty("FAKECAD_DEBUG_INPUT") || !qEnvironmentVariableIsEmpty("FAKECAD_INPUT_LOG"));
     return on;
 }
 
@@ -34,16 +39,43 @@ static const char* dragModeName(QGraphicsView::DragMode m) {
 
 bool CanvasView::viewportEvent(QEvent* event) {
     if (fc_debug_input_enabled()) {
+        auto writeLog = [&](const QString& line){
+            static QFile* f = nullptr;
+            if (!f) {
+                QString path = qEnvironmentVariable("FAKECAD_INPUT_LOG");
+                if (path.isEmpty()) {
+                    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+                    if (base.isEmpty()) base = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+                    QDir().mkpath(base);
+                    path = base + QLatin1String("/fakecad_input.log");
+                } else {
+                    // ensure directory exists
+                    QFileInfo fi(path);
+                    QDir().mkpath(fi.absolutePath());
+                }
+                f = new QFile(path);
+                f->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+            }
+            if (f && f->isOpen()) {
+                QTextStream ts(f);
+                ts << QDateTime::currentDateTime().toString(Qt::ISODateWithMs) << " " << line << "\n";
+                f->flush();
+            }
+        };
         if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
             auto* me = static_cast<QMouseEvent*>(event);
             const Qt::CursorShape vshape = viewport()->cursor().shape();
             const QCursor* oc = QGuiApplication::overrideCursor();
-            qInfo() << "[INPUT]" << (event->type()==QEvent::MouseButtonPress?"Press":event->type()==QEvent::MouseButtonRelease?"Release":"Move")
-                    << "btn:" << me->button() << "btns:" << me->buttons()
-                    << "drag:" << dragModeName(dragMode())
-                    << "spacePan:" << spacePanning_
-                    << "vpCursor:" << cursorShapeName(vshape)
-                    << "override:" << (oc?cursorShapeName(oc->shape()):"none");
+            const char* et = (event->type()==QEvent::MouseButtonPress?"Press":event->type()==QEvent::MouseButtonRelease?"Release":"Move");
+            QString line = QString("[INPUT] %1 btn:%2 btns:%3 drag:%4 space:%5 vp:%6 override:%7")
+                               .arg(et)
+                               .arg(int(me->button()))
+                               .arg(int(me->buttons()))
+                               .arg(dragModeName(dragMode()))
+                               .arg(spacePanning_)
+                               .arg(cursorShapeName(vshape))
+                               .arg(oc?cursorShapeName(oc->shape()):"none");
+            writeLog(line);
         }
     }
     if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
