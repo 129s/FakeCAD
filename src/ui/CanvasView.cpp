@@ -3,6 +3,7 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QKeyEvent>
+#include <QScrollBar>
 #include <algorithm>
 
 CanvasView::CanvasView(QWidget* parent)
@@ -26,7 +27,9 @@ void CanvasView::wheelEvent(QWheelEvent* event) {
 
 void CanvasView::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::MiddleButton) {
-        beginPan();
+        midPanning_ = true;
+        lastPanPos_ = event->pos();
+        setCursor(Qt::ClosedHandCursor);
         event->accept();
         return;
     }
@@ -35,7 +38,8 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
 
 void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
     if (event->button() == Qt::MiddleButton) {
-        endPan();
+        midPanning_ = false;
+        unsetCursor();
         event->accept();
         return;
     }
@@ -44,6 +48,14 @@ void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
 
 void CanvasView::mouseMoveEvent(QMouseEvent* event) {
     if (scene()) emit mouseScenePosChanged(mapToScene(event->pos()));
+    if (midPanning_) {
+        const QPoint delta = event->pos() - lastPanPos_;
+        lastPanPos_ = event->pos();
+        horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
+        verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
+        event->accept();
+        return;
+    }
     QGraphicsView::mouseMoveEvent(event);
 }
 
