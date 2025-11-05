@@ -29,6 +29,7 @@ void DrawingScene::clearPreview() {
     if (previewLine_) { removeItem(previewLine_); delete previewLine_; previewLine_ = nullptr; }
     if (previewRect_) { removeItem(previewRect_); delete previewRect_; previewRect_ = nullptr; }
     if (previewCircle_) { removeItem(previewCircle_); delete previewCircle_; previewCircle_ = nullptr; }
+    if (previewEllipse_) { removeItem(previewEllipse_); delete previewEllipse_; previewEllipse_ = nullptr; }
     drawing_ = false;
 }
 
