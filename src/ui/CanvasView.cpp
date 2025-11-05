@@ -27,9 +27,14 @@ void CanvasView::wheelEvent(QWheelEvent* event) {
 
 void CanvasView::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::MiddleButton) {
+        // 使用内置 ScrollHandDrag 机制：合成左键事件驱动平移
+        savedDragMode_ = dragMode();
+        setDragMode(QGraphicsView::ScrollHandDrag);
         midPanning_ = true;
-        lastPanPos_ = event->pos();
         setCursor(Qt::ClosedHandCursor);
+        QMouseEvent fakePress(QEvent::MouseButtonPress, event->pos(), Qt::LeftButton,
+                              Qt::LeftButton, event->modifiers());
+        QGraphicsView::mousePressEvent(&fakePress);
         event->accept();
         return;
     }
@@ -38,6 +43,10 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
 
 void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
     if (event->button() == Qt::MiddleButton) {
+        QMouseEvent fakeRelease(QEvent::MouseButtonRelease, event->pos(), Qt::LeftButton,
+                                Qt::NoButton, event->modifiers());
+        QGraphicsView::mouseReleaseEvent(&fakeRelease);
+        setDragMode(savedDragMode_);
         midPanning_ = false;
         unsetCursor();
         event->accept();
@@ -49,10 +58,9 @@ void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
 void CanvasView::mouseMoveEvent(QMouseEvent* event) {
     if (scene()) emit mouseScenePosChanged(mapToScene(event->pos()));
     if (midPanning_) {
-        const QPoint delta = event->pos() - lastPanPos_;
-        lastPanPos_ = event->pos();
-        horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
-        verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
+        QMouseEvent fakeMove(QEvent::MouseMove, event->pos(), Qt::LeftButton,
+                             Qt::LeftButton, event->modifiers());
+        QGraphicsView::mouseMoveEvent(&fakeMove);
         event->accept();
         return;
     }
