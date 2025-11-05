@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include <QScrollBar>
 #include <algorithm>
+#include <QCoreApplication>
 
 CanvasView::CanvasView(QWidget* parent)
     : QGraphicsView(parent) {
@@ -32,9 +33,11 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
         setDragMode(QGraphicsView::ScrollHandDrag);
         midPanning_ = true;
         setCursor(Qt::ClosedHandCursor);
-        QMouseEvent fakePress(QEvent::MouseButtonPress, event->pos(), Qt::LeftButton,
+        const QPointF lp = event->position();
+        const QPointF gp = QPointF(viewport()->mapToGlobal(event->pos()));
+        QMouseEvent fakePress(QEvent::MouseButtonPress, lp, gp, Qt::LeftButton,
                               Qt::LeftButton, event->modifiers());
-        QGraphicsView::mousePressEvent(&fakePress);
+        QCoreApplication::sendEvent(viewport(), &fakePress);
         event->accept();
         return;
     }
@@ -43,9 +46,11 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
 
 void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
     if (event->button() == Qt::MiddleButton) {
-        QMouseEvent fakeRelease(QEvent::MouseButtonRelease, event->pos(), Qt::LeftButton,
+        const QPointF lp = event->position();
+        const QPointF gp = QPointF(viewport()->mapToGlobal(event->pos()));
+        QMouseEvent fakeRelease(QEvent::MouseButtonRelease, lp, gp, Qt::LeftButton,
                                 Qt::NoButton, event->modifiers());
-        QGraphicsView::mouseReleaseEvent(&fakeRelease);
+        QCoreApplication::sendEvent(viewport(), &fakeRelease);
         setDragMode(savedDragMode_);
         midPanning_ = false;
         unsetCursor();
@@ -58,9 +63,11 @@ void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
 void CanvasView::mouseMoveEvent(QMouseEvent* event) {
     if (scene()) emit mouseScenePosChanged(mapToScene(event->pos()));
     if (midPanning_) {
-        QMouseEvent fakeMove(QEvent::MouseMove, event->pos(), Qt::LeftButton,
+        const QPointF lp = event->position();
+        const QPointF gp = QPointF(viewport()->mapToGlobal(event->pos()));
+        QMouseEvent fakeMove(QEvent::MouseMove, lp, gp, Qt::LeftButton,
                              Qt::LeftButton, event->modifiers());
-        QGraphicsView::mouseMoveEvent(&fakeMove);
+        QCoreApplication::sendEvent(viewport(), &fakeMove);
         event->accept();
         return;
     }
