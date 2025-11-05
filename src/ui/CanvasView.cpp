@@ -3,9 +3,49 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QKeyEvent>
+#include <QDebug>
+#include <QGuiApplication>
 #include <algorithm>
 
+static bool fc_debug_input_enabled() {
+    static bool on = !qEnvironmentVariableIsEmpty("FAKECAD_DEBUG_INPUT");
+    return on;
+}
+
+static const char* cursorShapeName(Qt::CursorShape s) {
+    switch (s) {
+    case Qt::ArrowCursor: return "Arrow";
+    case Qt::OpenHandCursor: return "OpenHand";
+    case Qt::ClosedHandCursor: return "ClosedHand";
+    case Qt::SizeAllCursor: return "SizeAll";
+    case Qt::CrossCursor: return "Cross";
+    default: return "Other";
+    }
+}
+
+static const char* dragModeName(QGraphicsView::DragMode m) {
+    switch (m) {
+    case QGraphicsView::NoDrag: return "NoDrag";
+    case QGraphicsView::RubberBandDrag: return "RubberBandDrag";
+    case QGraphicsView::ScrollHandDrag: return "ScrollHandDrag";
+    default: return "Unknown";
+    }
+}
+
 bool CanvasView::viewportEvent(QEvent* event) {
+    if (fc_debug_input_enabled()) {
+        if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
+            auto* me = static_cast<QMouseEvent*>(event);
+            const Qt::CursorShape vshape = viewport()->cursor().shape();
+            const QCursor* oc = QGuiApplication::overrideCursor();
+            qInfo() << "[INPUT]" << (event->type()==QEvent::MouseButtonPress?"Press":event->type()==QEvent::MouseButtonRelease?"Release":"Move")
+                    << "btn:" << me->button() << "btns:" << me->buttons()
+                    << "drag:" << dragModeName(dragMode())
+                    << "spacePan:" << spacePanning_
+                    << "vpCursor:" << cursorShapeName(vshape)
+                    << "override:" << (oc?cursorShapeName(oc->shape()):"none");
+        }
+    }
     if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
         auto* me = static_cast<QMouseEvent*>(event);
         // 在最早的 viewportEvent 层屏蔽中键相关事件，避免底层改变手型光标/触发拖拽
