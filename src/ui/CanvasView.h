@@ -24,9 +24,7 @@ private:
     qreal minScale_ { 0.1 };
     qreal maxScale_ { 10.0 };
     bool spacePanning_ { false };
-    bool midPanning_ { false };
     DragMode savedDragMode_ { QGraphicsView::NoDrag };
-    QPoint lastPanPos_;
 
     void beginPan();
     void endPan();
