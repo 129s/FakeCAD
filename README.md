@@ -40,6 +40,15 @@ cmake --build build -j
 运行：
 - 可执行文件位于 `build/` 目录（待项目骨架创建后生效）。
 
+## 测试
+- 启用 CTest，已提供四类测试：`unit`、`integration`、`ui`、`e2e`。
+- 运行（单配置生成器）：
+  - `ctest --test-dir build -VV`
+  - 仅运行某类：`ctest --test-dir build -L unit`（支持 `integration`/`ui`/`e2e`）
+- 运行（多配置生成器，如 VS）：
+  - `ctest --test-dir build -C Debug -VV`
+  - `ctest --test-dir build -C Debug -L ui`
+
 ## 打包/发布（Windows）
 - 目标：生成包含 Qt 运行时依赖的独立包（Release/Debug）。
 - 前置：确保系统可找到 `windeployqt.exe`（将 Qt 的 `bin` 目录加入 PATH，或在脚本参数中指定）。

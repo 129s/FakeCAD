@@ -1,8 +1,7 @@
-set(TARGET_NAME fakecad)
+set(APP_TARGET fakecad)
 
-add_executable(${TARGET_NAME}
-    WIN32
-    main.cpp
+# 将绝大部分源码编译为可复用静态库，便于测试链接
+add_library(fakecad_lib STATIC
     MainWindow.h
     MainWindow.cpp
     ui/ShapeItem.h
@@ -37,32 +36,41 @@ add_executable(${TARGET_NAME}
     core/shapes/Ellipse.cpp
 )
 
-target_link_libraries(${TARGET_NAME}
-    PRIVATE
+target_link_libraries(fakecad_lib
+    PUBLIC
         Qt6::Widgets
         Qt6::Gui
         Qt6::Core
 )
 
-target_include_directories(${TARGET_NAME}
-    PRIVATE
+target_include_directories(fakecad_lib
+    PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 if (MSVC)
-    target_compile_options(${TARGET_NAME} PRIVATE /W4)
+    target_compile_options(fakecad_lib PRIVATE /W4)
 else()
-    target_compile_options(${TARGET_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(fakecad_lib PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-set_property(TARGET ${TARGET_NAME} PROPERTY VS_DPI_AWARE "PerMonitorV2")
+# 应用程序仅包含入口 main 并链接库
+add_executable(${APP_TARGET} WIN32
+    main.cpp
+)
+
+target_link_libraries(${APP_TARGET}
+    PRIVATE
+        fakecad_lib
+)
+
+set_property(TARGET ${APP_TARGET} PROPERTY VS_DPI_AWARE "PerMonitorV2")
 
 # ---------------------------
 # 安装规则
 # 将可执行文件安装到前缀根目录（便于 windeployqt 就地部署依赖）
-# 同时在 Debug/RelWithDebInfo 下安装 PDB（如存在）。
 # ---------------------------
-install(TARGETS ${TARGET_NAME}
+install(TARGETS ${APP_TARGET}
     RUNTIME DESTINATION .
     BUNDLE  DESTINATION .
     LIBRARY DESTINATION .
@@ -71,5 +79,5 @@ install(TARGETS ${TARGET_NAME}
 
 # 安装 PDB（可选）
 if (MSVC)
-    install(FILES $<TARGET_PDB_FILE:${TARGET_NAME}> DESTINATION . OPTIONAL)
+    install(FILES $<TARGET_PDB_FILE:${APP_TARGET}> DESTINATION . OPTIONAL)
 endif()

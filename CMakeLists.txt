@@ -14,6 +14,10 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS Widgets Gui Core)
 
 add_subdirectory(src)
 
+# 测试集
+enable_testing()
+add_subdirectory(tests)
+
 # ---------------------------
 # CPack（用于生成ZIP包的基础配置）
 # 注意：Qt 运行时依赖在 Windows 上通过 windeployqt 由脚本完成，
