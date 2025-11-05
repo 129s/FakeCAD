@@ -3,81 +3,9 @@
 #include <QWheelEvent>
 #include <QMouseEvent>
 #include <QKeyEvent>
-#include <QDebug>
-#include <QGuiApplication>
-#include <QFile>
-#include <QDir>
-#include <QStandardPaths>
-#include <QDateTime>
-#include <QTextStream>
 #include <algorithm>
 
-static bool fc_debug_input_enabled() {
-    static bool on = (!qEnvironmentVariableIsEmpty("FAKECAD_DEBUG_INPUT") || !qEnvironmentVariableIsEmpty("FAKECAD_INPUT_LOG"));
-    return on;
-}
-
-static const char* cursorShapeName(Qt::CursorShape s) {
-    switch (s) {
-    case Qt::ArrowCursor: return "Arrow";
-    case Qt::OpenHandCursor: return "OpenHand";
-    case Qt::ClosedHandCursor: return "ClosedHand";
-    case Qt::SizeAllCursor: return "SizeAll";
-    case Qt::CrossCursor: return "Cross";
-    default: return "Other";
-    }
-}
-
-static const char* dragModeName(QGraphicsView::DragMode m) {
-    switch (m) {
-    case QGraphicsView::NoDrag: return "NoDrag";
-    case QGraphicsView::RubberBandDrag: return "RubberBandDrag";
-    case QGraphicsView::ScrollHandDrag: return "ScrollHandDrag";
-    default: return "Unknown";
-    }
-}
-
 bool CanvasView::viewportEvent(QEvent* event) {
-    if (fc_debug_input_enabled()) {
-        auto writeLog = [&](const QString& line){
-            static QFile* f = nullptr;
-            if (!f) {
-                QString path = qEnvironmentVariable("FAKECAD_INPUT_LOG");
-                if (path.isEmpty()) {
-                    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-                    if (base.isEmpty()) base = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-                    QDir().mkpath(base);
-                    path = base + QLatin1String("/fakecad_input.log");
-                } else {
-                    // ensure directory exists
-                    QFileInfo fi(path);
-                    QDir().mkpath(fi.absolutePath());
-                }
-                f = new QFile(path);
-                f->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
-            }
-            if (f && f->isOpen()) {
-                QTextStream ts(f);
-                ts << QDateTime::currentDateTime().toString(Qt::ISODateWithMs) << " " << line << "\n";
-                f->flush();
-            }
-        };
-        if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
-            auto* me = static_cast<QMouseEvent*>(event);
-            const Qt::CursorShape vshape = viewport()->cursor().shape();
-            const QCursor* oc = QGuiApplication::overrideCursor();
-            const char* et = (event->type()==QEvent::MouseButtonPress?"Press":event->type()==QEvent::MouseButtonRelease?"Release":"Move");
-            QString line = QString("[INPUT] %1 btn:%2 btns:%3 drag:%4 space:%5 vp:%6 override:%7")
-                               .arg(et)
-                               .arg(int(me->button()))
-                               .arg(int(me->buttons()))
-                               .arg(dragModeName(dragMode()))
-                               .arg(spacePanning_)
-                               .arg(cursorShapeName(vshape))
-                               .arg(oc?cursorShapeName(oc->shape()):"none");
-            writeLog(line);
-        }
-    }
     if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
         auto* me = static_cast<QMouseEvent*>(event);
         // 在最早的 viewportEvent 层屏蔽中键相关事件，避免底层改变手型光标/触发拖拽
