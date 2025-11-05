@@ -24,7 +24,7 @@ public:
     // 控制点支持（公开以便外部刷新）
     void showHandles(bool show);
     void updateHandles();
-    void geometryChanged() { prepareGeometryChange(); }
+    void geometryChanged() { prepareGeometryChange(); updateTransformOrigin(); }
     // 控制点移动（提供给 ControlPointItem 调用）
     enum class HandleKind { Vertex, Corner, Center, Radius, Rotation };
     void handleMoved(HandleKind kind, int index, const QPointF& localPos, const QPointF& scenePos, bool release);
@@ -61,6 +61,7 @@ private:
     QList<class QGraphicsItem*> handles_;
     class ControlPointItem* rotationHandle_ { nullptr };
     void clearHandles();
+    void updateTransformOrigin();
 
     // move tracking
     QPointF pressPos_{};

@@ -18,6 +18,7 @@ ShapeItem::ShapeItem(std::unique_ptr<Shape> shape, QGraphicsItem* parent)
     const auto& t = shape_->transform();
     setPos(t.m31(), t.m32());
     setRotation(shape_->rotationDegrees());
+    updateTransformOrigin();
 }
 
 QRectF ShapeItem::boundingRect() const {
@@ -51,6 +52,10 @@ void ShapeItem::clearHandles() {
     for (auto* h : handles_) { if (h) { h->setParentItem(nullptr); scene()->removeItem(h); delete h; } }
     handles_.clear();
     if (rotationHandle_) { rotationHandle_->setParentItem(nullptr); scene()->removeItem(rotationHandle_); delete rotationHandle_; rotationHandle_ = nullptr; }
+}
+
+void ShapeItem::updateTransformOrigin() {
+    setTransformOriginPoint(boundingRect().center());
 }
 
 void ShapeItem::showHandles(bool show) {
@@ -111,6 +116,7 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             if (index == 0) ls->setP1(localPos); else ls->setP2(localPos);
             prepareGeometryChange();
             update();
+            updateTransformOrigin();
         }
     } else if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
@@ -118,6 +124,7 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             else if (index == 1) tr->setP2(localPos);
             else tr->setP3(localPos);
             prepareGeometryChange(); update();
+            updateTransformOrigin();
         }
     } else if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
@@ -125,6 +132,7 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             if (index>=0 && index<pts.size()) pts[index] = localPos;
             pg->setPoints(pts);
             prepareGeometryChange(); update();
+            updateTransformOrigin();
         }
     } else if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
@@ -132,6 +140,7 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             if (index>=0 && index<pts.size()) pts[index] = localPos;
             pl->setPoints(pts);
             prepareGeometryChange(); update();
+            updateTransformOrigin();
         }
     } else if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
         if (kind == HandleKind::Corner) {
@@ -151,28 +160,33 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             rc->setRect(nr);
             prepareGeometryChange();
             update();
+            updateTransformOrigin();
         }
     } else if (auto* cc = dynamic_cast<Circle*>(shape_.get())) {
         if (kind == HandleKind::Center) {
             cc->setCenter(localPos);
             prepareGeometryChange();
             update();
+            updateTransformOrigin();
         } else if (kind == HandleKind::Radius) {
             const auto c = cc->center();
             const double r = std::hypot(localPos.x() - c.x(), localPos.y() - c.y());
             cc->setRadius(r);
             prepareGeometryChange();
             update();
+            updateTransformOrigin();
         }
     } else if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
         if (kind == HandleKind::Center) {
             el->setCenter(localPos);
             prepareGeometryChange(); update();
+            updateTransformOrigin();
         } else if (kind == HandleKind::Radius) {
             const auto c = el->center();
             if (index == 0) el->setRx(std::abs(localPos.x() - c.x()));
             else el->setRy(std::abs(localPos.y() - c.y()));
             prepareGeometryChange(); update();
+            updateTransformOrigin();
         }
     }
 }
