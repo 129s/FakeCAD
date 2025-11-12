@@ -10,13 +10,27 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+# 构建选项：单EXE（静态链接）与瘦身优化
+option(FAKECAD_SINGLE_EXE "构建单EXE（需要静态Qt/静态运行库）" OFF)
+option(FAKECAD_SIZE_OPTIMIZE "启用二进制瘦身优化（LTO/GC sections/strip 等）" OFF)
+
+# LTO/IPO：尽量在 Release 开启
+if (FAKECAD_SIZE_OPTIMIZE)
+    # CMake 3.9+ 支持 IPO；3.20 最低版本满足
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON)
+endif()
+
 find_package(Qt6 6.4 REQUIRED COMPONENTS Widgets Gui Core)
 
 add_subdirectory(src)
 
-# 测试集
-enable_testing()
-add_subdirectory(tests)
+# 测试集（按需开启）
+option(FAKECAD_BUILD_TESTS "是否构建测试" OFF)
+if (FAKECAD_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 # ---------------------------
 # CPack（用于生成ZIP包的基础配置）

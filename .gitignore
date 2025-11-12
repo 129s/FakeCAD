@@ -1,20 +1,23 @@
 # Build directories
 build/
-out/
+build-*/
+_packages/
+
+# Deployment outputs
 dist/
 
-# CMake
+# CMake files
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
-Makefile
-compile_commands.json
 
 # Visual Studio
-.vs/
 *.vcxproj*
 *.sln
 *.user
+*.pdb
 
-# Mac
-.DS_Store
+# Qt / Autogen
+*Autogen*/
+*_autogen/
+
