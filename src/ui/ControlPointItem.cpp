@@ -50,7 +50,6 @@ void ControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
         owner_->setRotation(initialOwnerRotation_ + delta);
         // 同步模型角度
         owner_->model()->setRotationDegrees(owner_->rotation());
-        owner_->updateHandles();
         return; // 不调用基类移动，以免把手柄位置改乱
     }
     // 非旋转手柄：将现场坐标映射到父项局部坐标（考虑吸附）
@@ -93,6 +92,7 @@ void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
                 }
             }
         }
+        if (owner_) owner_->updateHandles();
     }
     QGraphicsRectItem::mouseReleaseEvent(event);
 }
