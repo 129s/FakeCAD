@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QDockWidget>
 #include <QShortcut>
+#include <QKeyEvent>
 #include <QUndoStack>
 #include <memory>
 
@@ -55,6 +56,12 @@ MainWindow::MainWindow(QWidget* parent)
     scene->addItem(new ShapeItem(std::make_unique<LineSegment>(QPointF(-100, -80), QPointF(150, 60))));
     scene->addItem(new ShapeItem(std::make_unique<Rectangle>(QRectF(-200, -150, 120, 90))));
     scene->addItem(new ShapeItem(std::make_unique<Circle>(QPointF(180, -40), 60)));
+
+    qApp->installEventFilter(this);
+}
+
+MainWindow::~MainWindow() {
+    if (qApp) qApp->removeEventFilter(this);
 }
 
 void MainWindow::createActions() {
@@ -155,8 +162,12 @@ void MainWindow::createMenus() {
     auto editMenu = menuBar()->addMenu(tr("编辑"));
     auto undoAct = undo_->createUndoAction(this, tr("撤销"));
     undoAct->setShortcut(QKeySequence::Undo);
+    undoAct->setShortcutContext(Qt::ApplicationShortcut);
+    addAction(undoAct); // 确保即便焦点在子控件也能响应全局撤销
     auto redoAct = undo_->createRedoAction(this, tr("重做"));
     redoAct->setShortcuts({QKeySequence::Redo, QKeySequence(tr("Ctrl+Y"))});
+    redoAct->setShortcutContext(Qt::ApplicationShortcut);
+    addAction(redoAct);
     editMenu->addAction(undoAct);
     editMenu->addAction(redoAct);
     editMenu->addSeparator();
@@ -321,4 +332,23 @@ void MainWindow::onSelectionChanged() {
         if (auto* si = dynamic_cast<ShapeItem*>(it)) { propPanel->setShapeItem(si); return; }
     }
     propPanel->clearTarget();
+}
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
+    Q_UNUSED(obj);
+    if (!undo_) return QMainWindow::eventFilter(obj, event);
+
+    if (event->type() == QEvent::ShortcutOverride || event->type() == QEvent::KeyPress) {
+        auto* keyEvent = static_cast<QKeyEvent*>(event);
+        const bool isRedoKey = keyEvent->matches(QKeySequence::Redo)
+            || (keyEvent->modifiers().testFlag(Qt::ControlModifier) && keyEvent->key() == Qt::Key_Y);
+        if (isRedoKey) {
+            if (event->type() == QEvent::KeyPress) {
+                undo_->redo();
+            }
+            event->accept();
+            return true;
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
 }
