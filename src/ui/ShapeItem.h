@@ -13,6 +13,7 @@
 #include "../core/shapes/Ellipse.h"
 
 class ShapeItem : public QGraphicsItem {
+    friend class ControlPointItem;
 public:
     explicit ShapeItem(std::unique_ptr<Shape> shape, QGraphicsItem* parent = nullptr);
     ~ShapeItem() override = default;
@@ -33,7 +34,7 @@ public:
             bool sel = value.toBool();
             showHandles(sel);
         } else if (change == ItemRotationHasChanged) {
-            updateHandles();
+            if (!handlesFrozen_) updateHandles();
         } else if (change == ItemPositionChange) {
             // 位置吸附到网格
             if (scene()) {
@@ -62,9 +63,12 @@ private:
     class ControlPointItem* rotationHandle_ { nullptr };
     void clearHandles();
     void updateTransformOrigin();
+    void setHandlesFrozen(bool on) { handlesFrozen_ = on; }
 
     // move tracking
     QPointF pressPos_{};
     double pressRot_{};
     bool moving_{false};
+
+    bool handlesFrozen_{false};
 };

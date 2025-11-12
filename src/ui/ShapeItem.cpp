@@ -106,7 +106,8 @@ void ShapeItem::updateHandles() {
     // 旋转手柄：放在局部包围盒顶部中心上方 30px
     const auto br = boundingRect();
     QPointF topCenter = QPointF((br.left()+br.right())/2.0, br.top());
-    rotationHandle_ = new ControlPointItem(this, ControlPointItem::Kind::Rotation, 0, QRectF(-s/2, -s/2, s, s));
+    const qreal rotSize = 16.0;
+    rotationHandle_ = new ControlPointItem(this, ControlPointItem::Kind::Rotation, 0, QRectF(-rotSize/2, -rotSize/2, rotSize, rotSize));
     rotationHandle_->setPos(topCenter + QPointF(0, -30));
 }
 
