@@ -12,6 +12,9 @@ public:
 
     ControlPointItem(ShapeItem* owner, Kind kind, int index, const QRectF& rect);
 
+    Kind kind() const { return kind_; }
+    int index() const { return index_; }
+
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;

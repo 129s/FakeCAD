@@ -49,9 +49,15 @@ QRectF ShapeItem::boundingRect() const {
 }
 
 void ShapeItem::clearHandles() {
-    for (auto* h : handles_) { if (h) { h->setParentItem(nullptr); scene()->removeItem(h); delete h; } }
+    auto* sc = scene();
+    for (auto* h : handles_) { if (h) { h->setParentItem(nullptr); if (sc) sc->removeItem(h); delete h; } }
     handles_.clear();
-    if (rotationHandle_) { rotationHandle_->setParentItem(nullptr); scene()->removeItem(rotationHandle_); delete rotationHandle_; rotationHandle_ = nullptr; }
+    if (rotationHandle_) {
+        rotationHandle_->setParentItem(nullptr);
+        if (sc) sc->removeItem(rotationHandle_);
+        delete rotationHandle_;
+        rotationHandle_ = nullptr;
+    }
 }
 
 void ShapeItem::updateTransformOrigin() {
@@ -111,83 +117,205 @@ void ShapeItem::updateHandles() {
     rotationHandle_->setPos(topCenter + QPointF(0, -30));
 }
 
+void ShapeItem::syncHandlesPositions(HandleKind activeKind, int activeIndex) {
+    if (handles_.isEmpty() && !rotationHandle_) return;
+
+    auto setIfNotActive = [&](ControlPointItem* h, const QPointF& p) {
+        if (!h) return;
+        if (static_cast<HandleKind>(h->kind()) == activeKind && h->index() == activeIndex) return;
+        h->setPos(p);
+    };
+
+    if (auto* ls = dynamic_cast<LineSegment*>(shape_.get())) {
+        for (auto* it : handles_) {
+            auto* h = dynamic_cast<ControlPointItem*>(it);
+            if (!h) continue;
+            if (h->kind() != ControlPointItem::Kind::Vertex) continue;
+            setIfNotActive(h, h->index() == 0 ? ls->p1() : ls->p2());
+        }
+    } else if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
+        for (auto* it : handles_) {
+            auto* h = dynamic_cast<ControlPointItem*>(it);
+            if (!h) continue;
+            if (h->kind() != ControlPointItem::Kind::Vertex) continue;
+            if (h->index() == 0) setIfNotActive(h, tr->p1());
+            else if (h->index() == 1) setIfNotActive(h, tr->p2());
+            else if (h->index() == 2) setIfNotActive(h, tr->p3());
+        }
+    } else if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
+        const auto& pts = pg->points();
+        for (auto* it : handles_) {
+            auto* h = dynamic_cast<ControlPointItem*>(it);
+            if (!h) continue;
+            if (h->kind() != ControlPointItem::Kind::Vertex) continue;
+            if (h->index() >= 0 && h->index() < pts.size()) setIfNotActive(h, pts[h->index()]);
+        }
+    } else if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
+        const auto& pts = pl->points();
+        for (auto* it : handles_) {
+            auto* h = dynamic_cast<ControlPointItem*>(it);
+            if (!h) continue;
+            if (h->kind() != ControlPointItem::Kind::Vertex) continue;
+            if (h->index() >= 0 && h->index() < pts.size()) setIfNotActive(h, pts[h->index()]);
+        }
+    } else if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
+        const auto r = rc->rect().normalized();
+        for (auto* it : handles_) {
+            auto* h = dynamic_cast<ControlPointItem*>(it);
+            if (!h) continue;
+            if (h->kind() != ControlPointItem::Kind::Corner) continue;
+            switch (h->index()) {
+            case 0: setIfNotActive(h, r.topLeft()); break;
+            case 1: setIfNotActive(h, r.topRight()); break;
+            case 2: setIfNotActive(h, r.bottomRight()); break;
+            case 3: setIfNotActive(h, r.bottomLeft()); break;
+            default: break;
+            }
+        }
+    } else if (auto* cc = dynamic_cast<Circle*>(shape_.get())) {
+        const auto c = cc->center();
+        for (auto* it : handles_) {
+            auto* h = dynamic_cast<ControlPointItem*>(it);
+            if (!h) continue;
+            if (h->kind() == ControlPointItem::Kind::Center) setIfNotActive(h, c);
+            else if (h->kind() == ControlPointItem::Kind::Radius) setIfNotActive(h, c + QPointF(cc->radius(), 0));
+        }
+    } else if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
+        const auto c = el->center();
+        for (auto* it : handles_) {
+            auto* h = dynamic_cast<ControlPointItem*>(it);
+            if (!h) continue;
+            if (h->kind() == ControlPointItem::Kind::Center) setIfNotActive(h, c);
+            else if (h->kind() == ControlPointItem::Kind::Radius) {
+                if (h->index() == 0) setIfNotActive(h, c + QPointF(el->rx(), 0));
+                else if (h->index() == 1) setIfNotActive(h, c + QPointF(0, el->ry()));
+            }
+        }
+    }
+
+    if (rotationHandle_ && !(activeKind == HandleKind::Rotation)) {
+        const auto br = boundingRect();
+        QPointF topCenter = QPointF((br.left()+br.right())/2.0, br.top());
+        rotationHandle_->setPos(topCenter + QPointF(0, -30));
+    }
+}
+
 void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos, const QPointF& /*scenePos*/, bool /*release*/) {
     if (auto* ls = dynamic_cast<LineSegment*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
-            if (index == 0) ls->setP1(localPos); else ls->setP2(localPos);
+            const QRectF oldBr = boundingRect();
             prepareGeometryChange();
-            update();
+            if (index == 0) ls->setP1(localPos); else ls->setP2(localPos);
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
             updateTransformOrigin();
+            syncHandlesPositions(kind, index);
         }
     } else if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
+            const QRectF oldBr = boundingRect();
+            prepareGeometryChange();
             if (index == 0) tr->setP1(localPos);
             else if (index == 1) tr->setP2(localPos);
             else tr->setP3(localPos);
-            prepareGeometryChange(); update();
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
             updateTransformOrigin();
+            syncHandlesPositions(kind, index);
         }
     } else if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
+            const QRectF oldBr = boundingRect();
+            prepareGeometryChange();
             auto pts = pg->points();
             if (index>=0 && index<pts.size()) pts[index] = localPos;
             pg->setPoints(pts);
-            prepareGeometryChange(); update();
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
             updateTransformOrigin();
+            syncHandlesPositions(kind, index);
         }
     } else if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
+            const QRectF oldBr = boundingRect();
+            prepareGeometryChange();
             auto pts = pl->points();
             if (index>=0 && index<pts.size()) pts[index] = localPos;
             pl->setPoints(pts);
-            prepareGeometryChange(); update();
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
             updateTransformOrigin();
+            syncHandlesPositions(kind, index);
         }
     } else if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
         if (kind == HandleKind::Corner) {
-            auto r = rc->rect();
-            QPointF tl = r.topLeft();
-            QPointF tr = r.topRight();
-            QPointF br = r.bottomRight();
-            QPointF bl = r.bottomLeft();
-            switch (index) {
-            case 0: tl = localPos; break;
-            case 1: tr = localPos; break;
-            case 2: br = localPos; break;
-            case 3: bl = localPos; break;
-            }
-            QRectF nr(QPointF(std::min({tl.x(), tr.x(), br.x(), bl.x()}), std::min({tl.y(), tr.y(), br.y(), bl.y()})),
-                      QPointF(std::max({tl.x(), tr.x(), br.x(), bl.x()}), std::max({tl.y(), tr.y(), br.y(), bl.y()})));
-            rc->setRect(nr);
+            const QRectF oldBr = boundingRect();
             prepareGeometryChange();
-            update();
+            const QRectF r = rc->rect().normalized();
+            QPointF fixed;
+            switch (index) {
+            case 0: fixed = r.bottomRight(); break; // drag TL, fix BR
+            case 1: fixed = r.bottomLeft(); break;  // drag TR, fix BL
+            case 2: fixed = r.topLeft(); break;     // drag BR, fix TL
+            case 3: fixed = r.topRight(); break;    // drag BL, fix TR
+            default: fixed = r.bottomRight(); break;
+            }
+
+            // 旋转状态下，修改几何会改变中心点（transformOrigin），需要补偿位移以保持“固定对角点”在场景中不漂移
+            const QPointF fixedSceneBefore = mapToScene(fixed);
+            rc->setRect(QRectF(localPos, fixed).normalized());
             updateTransformOrigin();
+            const QPointF fixedSceneAfter = mapToScene(fixed);
+            const QPointF deltaScene = fixedSceneBefore - fixedSceneAfter;
+            const QPointF deltaParent = parentItem()
+                ? parentItem()->mapFromScene(fixedSceneBefore) - parentItem()->mapFromScene(fixedSceneAfter)
+                : deltaScene;
+            setPos(pos() + deltaParent);
+            if (shape_) shape_->MoveTo(pos().x(), pos().y());
+
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
+            syncHandlesPositions(kind, index);
         }
     } else if (auto* cc = dynamic_cast<Circle*>(shape_.get())) {
         if (kind == HandleKind::Center) {
-            cc->setCenter(localPos);
+            const QRectF oldBr = boundingRect();
             prepareGeometryChange();
-            update();
+            cc->setCenter(localPos);
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
             updateTransformOrigin();
+            syncHandlesPositions(kind, index);
         } else if (kind == HandleKind::Radius) {
+            const QRectF oldBr = boundingRect();
+            prepareGeometryChange();
             const auto c = cc->center();
             const double r = std::hypot(localPos.x() - c.x(), localPos.y() - c.y());
             cc->setRadius(r);
-            prepareGeometryChange();
-            update();
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
             updateTransformOrigin();
+            syncHandlesPositions(kind, index);
         }
     } else if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
         if (kind == HandleKind::Center) {
+            const QRectF oldBr = boundingRect();
+            prepareGeometryChange();
             el->setCenter(localPos);
-            prepareGeometryChange(); update();
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
             updateTransformOrigin();
+            syncHandlesPositions(kind, index);
         } else if (kind == HandleKind::Radius) {
+            const QRectF oldBr = boundingRect();
+            prepareGeometryChange();
             const auto c = el->center();
             if (index == 0) el->setRx(std::abs(localPos.x() - c.x()));
             else el->setRy(std::abs(localPos.y() - c.y()));
-            prepareGeometryChange(); update();
+            const QRectF newBr = boundingRect();
+            update(oldBr.united(newBr));
             updateTransformOrigin();
+            syncHandlesPositions(kind, index);
         }
     }
 }

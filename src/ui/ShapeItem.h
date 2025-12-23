@@ -25,7 +25,9 @@ public:
     // 控制点支持（公开以便外部刷新）
     void showHandles(bool show);
     void updateHandles();
-    void geometryChanged() { prepareGeometryChange(); updateTransformOrigin(); }
+    // 供外部（如撤销命令）使用：先通知几何即将变化，再完成变化并刷新
+    void aboutToChangeGeometry() { prepareGeometryChange(); }
+    void geometryChanged() { updateTransformOrigin(); update(); }
     // 控制点移动（提供给 ControlPointItem 调用）
     enum class HandleKind { Vertex, Corner, Center, Radius, Rotation };
     void handleMoved(HandleKind kind, int index, const QPointF& localPos, const QPointF& scenePos, bool release);
@@ -64,6 +66,7 @@ private:
     void clearHandles();
     void updateTransformOrigin();
     void setHandlesFrozen(bool on) { handlesFrozen_ = on; }
+    void syncHandlesPositions(HandleKind activeKind, int activeIndex);
 
     // move tracking
     QPointF pressPos_{};

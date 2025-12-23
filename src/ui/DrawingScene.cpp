@@ -4,6 +4,7 @@
 #include <QGraphicsLineItem>
 #include <QGraphicsRectItem>
 #include <QGraphicsEllipseItem>
+#include <QGraphicsView>
 #include <QtMath>
 #include <QPainter>
 #include <cmath>
@@ -35,6 +36,22 @@ void DrawingScene::clearPreview() {
 
 void DrawingScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
     if (event->button() == Qt::LeftButton && mode_ != Mode::None) {
+        // 绘制模式下，如果点到现有图形（含其控制点/子项），应允许选择/编辑而不是开始新绘制
+        QTransform deviceTransform;
+        if (auto* w = event->widget()) {
+            if (auto* view = qobject_cast<QGraphicsView*>(w->parentWidget())) {
+                deviceTransform = view->viewportTransform();
+            }
+        }
+        const auto hit = items(event->scenePos(), Qt::IntersectsItemShape, Qt::DescendingOrder, deviceTransform);
+        for (auto* it : hit) {
+            for (auto* p = it; p; p = p->parentItem()) {
+                if (auto* si = dynamic_cast<ShapeItem*>(p); si && si->isSelected()) {
+                    QGraphicsScene::mousePressEvent(event);
+                    return;
+                }
+            }
+        }
         drawing_ = true;
         startPos_ = snapPoint(event->scenePos());
         switch (mode_) {

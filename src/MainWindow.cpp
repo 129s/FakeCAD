@@ -14,6 +14,7 @@
 #include <QShortcut>
 #include <QKeyEvent>
 #include <QUndoStack>
+#include <QPointer>
 #include <memory>
 
 #include "ui/ShapeItem.h"
@@ -42,11 +43,16 @@ MainWindow::MainWindow(QWidget* parent)
     scene = new DrawingScene(this);
     scene->setSceneRect(-5000, -5000, 10000, 10000);
     scene->setUndoStack(undo_);
+    connect(actToggleGrid, &QAction::toggled, scene, &DrawingScene::setShowGrid);
+    connect(actSnapGrid, &QAction::toggled, scene, &DrawingScene::setSnapToGrid);
 
     view = new CanvasView(scene, this);
     view->setDragMode(QGraphicsView::RubberBandDrag);
-    connect(view, &CanvasView::mouseScenePosChanged, this, [this](const QPointF& p){
-        statusBar()->showMessage(tr("坐标: (%1, %2)").arg(p.x(), 0, 'f', 1).arg(p.y(), 0, 'f', 1));
+    // 以 view 作为上下文对象，避免 MainWindow 析构阶段触发 functor 类型检查断言
+    QPointer<MainWindow> self(this);
+    connect(view, &CanvasView::mouseScenePosChanged, view, [self](const QPointF& p){
+        if (!self) return;
+        self->statusBar()->showMessage(QObject::tr("坐标: (%1, %2)").arg(p.x(), 0, 'f', 1).arg(p.y(), 0, 'f', 1));
     });
     setCentralWidget(view);
 
@@ -61,6 +67,10 @@ MainWindow::MainWindow(QWidget* parent)
 }
 
 MainWindow::~MainWindow() {
+    // 关闭时如果当前仍有选中项，DrawingScene 析构/清理选区可能触发 selectionChanged，
+    // 但此时 MainWindow 已处于析构链中会导致 Qt 的类型检查断言。
+    if (scene) scene->blockSignals(true);
+    if (view) view->blockSignals(true);
     if (qApp) qApp->removeEventFilter(this);
 }
 
@@ -130,20 +140,19 @@ void MainWindow::createActions() {
 
     // Esc 返回选择
     auto escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
-    connect(escShortcut, &QShortcut::activated, this, [this]{ actSelect->setChecked(true); });
+    connect(escShortcut, &QShortcut::activated, actSelect, [a = actSelect]{ a->setChecked(true); });
 
     // 视图选项
     actToggleGrid = new QAction(tr("显示网格"), this);
     actToggleGrid->setCheckable(true);
     actToggleGrid->setChecked(true);
     actToggleGrid->setShortcut(QKeySequence(tr("G")));
-    connect(actToggleGrid, &QAction::toggled, this, [this](bool on){ scene->setShowGrid(on); });
 
     actSnapGrid = new QAction(tr("吸附到网格"), this);
     actSnapGrid->setCheckable(true);
     actSnapGrid->setChecked(false);
     actSnapGrid->setShortcut(QKeySequence(tr("Shift+G")));
-    connect(actSnapGrid, &QAction::toggled, this, [this](bool on){ scene->setSnapToGrid(on); });
+    // 注意：scene 尚未创建，连接在构造函数中完成
 
     // 删除选中
     actDelete = new QAction(tr("删除选中"), this);

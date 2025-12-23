@@ -87,10 +87,10 @@ EditShapeJsonCommand::EditShapeJsonCommand(ShapeItem* item, const QJsonObject& o
 
 void EditShapeJsonCommand::apply(const QJsonObject& j) {
     if (!item_ || !item_->model()) return;
+    item_->aboutToChangeGeometry();
     Ser::ApplyJsonToShape(item_->model(), j);
     item_->geometryChanged();
     item_->updateHandles();
-    item_->update();
 }
 
 void EditShapeJsonCommand::redo() { apply(neo_); }

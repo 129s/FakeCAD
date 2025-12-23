@@ -34,6 +34,15 @@ target_link_libraries(ui_tests PRIVATE Qt6::Test Qt6::Widgets Qt6::Gui Qt6::Core
 add_test(NAME ui COMMAND ui_tests)
 set_tests_properties(ui PROPERTIES LABELS "ui")
 
+# UI 测试：控制点拖拽编辑
+add_executable(ui_tests_handles
+    ui/test_handles.cpp
+)
+target_include_directories(ui_tests_handles PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(ui_tests_handles PRIVATE Qt6::Test Qt6::Widgets Qt6::Gui Qt6::Core fakecad_lib)
+add_test(NAME ui_handles COMMAND ui_tests_handles)
+set_tests_properties(ui_handles PROPERTIES LABELS "ui")
+
 # 额外 UI 测试：圆/椭圆绘制
 add_executable(ui_tests_scene
     ui/test_drawing_scene_more.cpp

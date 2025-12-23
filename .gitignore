@@ -1,6 +1,7 @@
 # Build directories
 build/
 build-*/
+build_dev/
 _packages/
 
 # Deployment outputs
@@ -20,4 +21,3 @@ cmake_install.cmake
 # Qt / Autogen
 *Autogen*/
 *_autogen/
-

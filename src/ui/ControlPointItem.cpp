@@ -20,13 +20,16 @@ ControlPointItem::ControlPointItem(ShapeItem* owner, Kind kind, int index, const
     setZValue(10'000); // on top
     setBrush(Qt::white);
     setPen(QPen(Qt::black));
-    setFlag(ItemIsMovable, true);
+    // 自行处理拖拽，避免 QGraphicsView::RubberBandDrag 等模式抢事件/与默认移动逻辑冲突
+    setFlag(ItemIsMovable, false);
     setFlag(ItemIgnoresTransformations, true);
+    setAcceptedMouseButtons(Qt::LeftButton);
     setCursor(QCursor(Qt::SizeAllCursor));
 }
 
 void ControlPointItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
-    QGraphicsRectItem::mousePressEvent(event);
+    if (event->button() != Qt::LeftButton) { event->ignore(); return; }
+    event->accept();
     pressScenePos_ = event->scenePos();
     // rotation support
     if (kind_ == Kind::Rotation) {
@@ -44,6 +47,7 @@ void ControlPointItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
 }
 
 void ControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
+    event->accept();
     if (kind_ == Kind::Rotation) {
         // compute delta angle relative to pivot
         QPointF v0 = pressScenePos_ - centerScene_;
@@ -55,7 +59,9 @@ void ControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
         owner_->setRotation(initialOwnerRotation_ + delta);
         // 同步模型角度
         owner_->model()->setRotationDegrees(owner_->rotation());
-        return; // 不调用基类移动，以免把手柄位置改乱
+        // 让旋转手柄跟随鼠标（视觉反馈），松手后会被 updateHandles 复位
+        if (owner_) setPos(owner_->mapFromScene(event->scenePos()));
+        return;
     }
     // 非旋转手柄：将现场坐标映射到父项局部坐标（考虑吸附）
     QPointF sp = event->scenePos();
@@ -70,7 +76,7 @@ void ControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
 }
 
 void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
-    QGraphicsRectItem::mouseReleaseEvent(event);
+    event->accept();
     if (kind_ != Kind::Rotation) {
         QPointF sp = event->scenePos();
         if (owner_->scene()) {
@@ -89,8 +95,9 @@ void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
             }
         }
         if (owner_) {
-            owner_->updateHandles();
-            return; // 当前手柄已被 updateHandles 删除
+            // 拖拽过程中已实时同步控制点，松手不再重建（避免删除当前对象导致随机崩溃）
+            owner_->syncHandlesPositions(static_cast<ShapeItem::HandleKind>(kind_), index_);
+            return;
         }
     } else {
         const qreal newRot = owner_->rotation();
@@ -103,7 +110,8 @@ void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
         }
         if (owner_) {
             owner_->setHandlesFrozen(false);
-            owner_->updateHandles();
+            // 旋转结束后把旋转手柄吸回到“包围盒顶部中心”
+            owner_->syncHandlesPositions(ShapeItem::HandleKind::Vertex, -1);
         }
         return; // rotation handle deleted during updateHandles()
     }

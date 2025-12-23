@@ -5,6 +5,8 @@
 #include <QKeyEvent>
 #include <algorithm>
 
+#include "ControlPointItem.h"
+
 bool CanvasView::viewportEvent(QEvent* event) {
     if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
         auto* me = static_cast<QMouseEvent*>(event);
@@ -46,6 +48,16 @@ void CanvasView::wheelEvent(QWheelEvent* event) {
 }
 
 void CanvasView::mousePressEvent(QMouseEvent* event) {
+    // RubberBandDrag 下，控制点（不可选）可能被视为“空白”而触发拉框，导致拖拽编辑无效；
+    // 点击控制点时临时禁用拉框拖拽，待松开后恢复。
+    if (!spacePanning_ && dragMode() == QGraphicsView::RubberBandDrag && event->button() == Qt::LeftButton) {
+        if (auto* it = itemAt(event->pos())) {
+            if (dynamic_cast<ControlPointItem*>(it)) {
+                savedDragMode_ = dragMode();
+                setDragMode(QGraphicsView::NoDrag);
+            }
+        }
+    }
     if (spacePanning_ && event->button() == Qt::LeftButton) {
         setCursor(Qt::ClosedHandCursor);
     }
@@ -53,6 +65,10 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
 }
 
 void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
+    if (!spacePanning_ && dragMode() == QGraphicsView::NoDrag && savedDragMode_ == QGraphicsView::RubberBandDrag && event->button() == Qt::LeftButton) {
+        setDragMode(savedDragMode_);
+        savedDragMode_ = QGraphicsView::NoDrag;
+    }
     if (spacePanning_ && event->button() == Qt::LeftButton) {
         setCursor(Qt::OpenHandCursor);
     }
