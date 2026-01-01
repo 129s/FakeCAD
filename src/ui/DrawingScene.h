@@ -2,17 +2,19 @@
 
 #include <QGraphicsScene>
 #include <QPointF>
+#include <QVector>
 
 class QUndoStack;
 
 class QGraphicsLineItem;
 class QGraphicsRectItem;
 class QGraphicsEllipseItem;
+class QGraphicsPathItem;
 
 class DrawingScene : public QGraphicsScene {
     Q_OBJECT
 public:
-    enum class Mode { None, Line, Rect, Circle, Ellipse };
+    enum class Mode { None, Line, Rect, Circle, Ellipse, Polygon, Triangle };
 
     explicit DrawingScene(QObject* parent = nullptr);
 
@@ -34,7 +36,8 @@ public:
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
-    void drawBackground(QPainter* painter, const QRectF& rect) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
+    void drawBackground(QPainter* painter, const QRectF& rect) override;        
 
 private:
     Mode mode_ { Mode::None };
@@ -45,8 +48,15 @@ private:
     QGraphicsRectItem*    previewRect_   { nullptr };
     QGraphicsEllipseItem* previewCircle_ { nullptr };
     QGraphicsEllipseItem* previewEllipse_ { nullptr };
+    QGraphicsPathItem* previewPolygon_ { nullptr };
+    QVector<QPointF> polygonPoints_ {};
+    QGraphicsPathItem* previewTriangle_ { nullptr };
+    QVector<QPointF> trianglePoints_ {};
 
     void clearPreview();
+    void updatePolygonPreview(const QPointF& cur);
+    void finishPolygon();
+    void updateTrianglePreview(const QPointF& cur);
 
     // grid settings
     bool showGrid_ { true };

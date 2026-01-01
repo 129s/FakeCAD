@@ -31,6 +31,8 @@ private:
     QAction* actDrawRect{};
     QAction* actDrawCircle{};
     QAction* actDrawEllipse{};
+    QAction* actDrawTriangle{};
+    QAction* actDrawPolygon{};
     class QActionGroup* drawGroup{};
     QAction* actToggleGrid{};
     QAction* actSnapGrid{};
@@ -56,6 +58,8 @@ private slots:
     void onDrawRectToggled(bool on);
     void onDrawCircleToggled(bool on);
     void onDrawEllipseToggled(bool on);
+    void onDrawTriangleToggled(bool on);
+    void onDrawPolygonToggled(bool on);
     void onZoomIn();
     void onZoomOut();
     void onResetZoom();

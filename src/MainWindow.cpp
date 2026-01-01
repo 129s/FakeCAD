@@ -110,17 +110,23 @@ void MainWindow::createActions() {
     actDrawRect = new QAction(tr("矩形"), this);
     actDrawCircle = new QAction(tr("圆"), this);
     actDrawEllipse = new QAction(tr("椭圆"), this);
+    actDrawTriangle = new QAction(tr("三角形"), this);
+    actDrawPolygon = new QAction(tr("多边形"), this);
 
     actSelect->setCheckable(true);
     actDrawLine->setCheckable(true);
     actDrawRect->setCheckable(true);
     actDrawCircle->setCheckable(true);
     actDrawEllipse->setCheckable(true);
+    actDrawTriangle->setCheckable(true);
+    actDrawPolygon->setCheckable(true);
     actSelect->setShortcut(QKeySequence(tr("1")));
     actDrawLine->setShortcut(QKeySequence(tr("2")));
     actDrawRect->setShortcut(QKeySequence(tr("3")));
     actDrawCircle->setShortcut(QKeySequence(tr("4")));
     actDrawEllipse->setShortcut(QKeySequence(tr("5")));
+    actDrawTriangle->setShortcut(QKeySequence(tr("7")));
+    actDrawPolygon->setShortcut(QKeySequence(tr("6")));
 
     drawGroup = new QActionGroup(this);
     drawGroup->setExclusive(true);
@@ -129,6 +135,8 @@ void MainWindow::createActions() {
     drawGroup->addAction(actDrawRect);
     drawGroup->addAction(actDrawCircle);
     drawGroup->addAction(actDrawEllipse);
+    drawGroup->addAction(actDrawTriangle);
+    drawGroup->addAction(actDrawPolygon);
 
     actSelect->setChecked(true);
 
@@ -137,6 +145,8 @@ void MainWindow::createActions() {
     connect(actDrawRect, &QAction::toggled, this, &MainWindow::onDrawRectToggled);
     connect(actDrawCircle, &QAction::toggled, this, &MainWindow::onDrawCircleToggled);
     connect(actDrawEllipse, &QAction::toggled, this, &MainWindow::onDrawEllipseToggled);
+    connect(actDrawTriangle, &QAction::toggled, this, &MainWindow::onDrawTriangleToggled);
+    connect(actDrawPolygon, &QAction::toggled, this, &MainWindow::onDrawPolygonToggled);
 
     // Esc 返回选择
     auto escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
@@ -210,10 +220,12 @@ void MainWindow::createToolbars() {
     auto drawBar = addToolBar(tr("绘制"));
     drawBar->addAction(actSelect);
     drawBar->addAction(actDrawLine);
-    drawBar->addAction(actDrawRect);
-    drawBar->addAction(actDrawCircle);
-    drawBar->addAction(actDrawEllipse);
-}
+    drawBar->addAction(actDrawRect);      
+    drawBar->addAction(actDrawCircle);    
+    drawBar->addAction(actDrawEllipse);   
+    drawBar->addAction(actDrawTriangle);
+    drawBar->addAction(actDrawPolygon);   
+} 
 
 void MainWindow::createStatusbar() {
     statusBar()->showMessage(tr("就绪"));
@@ -282,6 +294,8 @@ void MainWindow::updateViewDragMode() {
         case DrawingScene::Mode::Rect:   statusBar()->showMessage(tr("绘制矩形：按下拖拽释放"), 2000); break;
         case DrawingScene::Mode::Circle: statusBar()->showMessage(tr("绘制圆（中心+半径）：按下拖拽释放"), 2000); break;
         case DrawingScene::Mode::Ellipse: statusBar()->showMessage(tr("绘制椭圆（中心+半径X/Y）：按下拖拽释放"), 2000); break;
+        case DrawingScene::Mode::Polygon: statusBar()->showMessage(tr("绘制多边形：单击添加顶点，右键或双击结束"), 2000); break;
+        case DrawingScene::Mode::Triangle: statusBar()->showMessage(tr("绘制三角形：单击三次确定三个顶点"), 2000); break;
         default: break;
         }
     }
@@ -313,6 +327,18 @@ void MainWindow::onDrawCircleToggled(bool on) {
 void MainWindow::onDrawEllipseToggled(bool on) {
     if (!on) return;
     scene->setMode(DrawingScene::Mode::Ellipse);
+    updateViewDragMode();
+}
+
+void MainWindow::onDrawTriangleToggled(bool on) {
+    if (!on) return;
+    scene->setMode(DrawingScene::Mode::Triangle);
+    updateViewDragMode();
+}
+
+void MainWindow::onDrawPolygonToggled(bool on) {
+    if (!on) return;
+    scene->setMode(DrawingScene::Mode::Polygon);
     updateViewDragMode();
 }
 
