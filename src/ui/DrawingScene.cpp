@@ -20,6 +20,28 @@
 #include "../undo/Commands.h"
 #include "../core/Serialization.h"
 
+static QVector<QPointF> makeRegularPolygonPoints(const QPointF& center, qreal radius, int sides, qreal startAngleRad) {
+    QVector<QPointF> pts;
+    if (sides < 3 || radius <= 0) return pts;
+    pts.reserve(sides);
+    const qreal step = 2.0 * M_PI / static_cast<qreal>(sides);
+    for (int i = 0; i < sides; ++i) {
+        const qreal a = startAngleRad + step * static_cast<qreal>(i);
+        pts.push_back(QPointF(center.x() + radius * std::cos(a),
+                              center.y() + radius * std::sin(a)));
+    }
+    return pts;
+}
+
+static QPainterPath pathFromClosedPoints(const QVector<QPointF>& pts) {
+    QPainterPath path;
+    if (pts.size() < 2) return path;
+    path.moveTo(pts.front());
+    for (int i = 1; i < pts.size(); ++i) path.lineTo(pts[i]);
+    path.closeSubpath();
+    return path;
+}
+
 DrawingScene::DrawingScene(QObject* parent)
     : QGraphicsScene(parent) {
 }
@@ -37,6 +59,7 @@ void DrawingScene::clearPreview() {
     if (previewEllipse_) { removeItem(previewEllipse_); delete previewEllipse_; previewEllipse_ = nullptr; }
     if (previewPolygon_) { removeItem(previewPolygon_); delete previewPolygon_; previewPolygon_ = nullptr; }
     if (previewTriangle_) { removeItem(previewTriangle_); delete previewTriangle_; previewTriangle_ = nullptr; }
+    if (previewRegularPolygon_) { removeItem(previewRegularPolygon_); delete previewRegularPolygon_; previewRegularPolygon_ = nullptr; }
     polygonPoints_.clear();
     trianglePoints_.clear();
     drawing_ = false;
@@ -223,6 +246,9 @@ void DrawingScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
         case Mode::Ellipse:
             previewEllipse_ = addEllipse(QRectF(startPos_, startPos_), QPen(Qt::darkGray, 1, Qt::DashLine));
             break;
+        case Mode::RegularPolygon:
+            previewRegularPolygon_ = addPath(QPainterPath(), QPen(Qt::darkGray, 1, Qt::DashLine));
+            break;
         default:
             break;
         }
@@ -232,7 +258,7 @@ void DrawingScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
     QGraphicsScene::mousePressEvent(event);
 }
 
-void DrawingScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {       
+void DrawingScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
     if (drawing_ && mode_ == Mode::Polygon) {
         updatePolygonPreview(snapPoint(event->scenePos()));
         event->accept();
@@ -247,7 +273,7 @@ void DrawingScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
         const QPointF cur = snapPoint(event->scenePos());
         switch (mode_) {
         case Mode::Line:
-            if (previewLine_) previewLine_->setLine(QLineF(startPos_, cur));    
+            if (previewLine_) previewLine_->setLine(QLineF(startPos_, cur));
             break;
         case Mode::Rect: {
             if (previewRect_) previewRect_->setRect(QRectF(startPos_, cur).normalized());
@@ -270,6 +296,15 @@ void DrawingScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
                                                 startPos_.y() - std::abs(cur.y()-startPos_.y()),
                                                 2*std::abs(cur.x()-startPos_.x()),
                                                 2*std::abs(cur.y()-startPos_.y())));
+            }
+            break;
+        }
+        case Mode::RegularPolygon: {
+            if (previewRegularPolygon_) {
+                const qreal r = std::hypot(cur.x() - startPos_.x(), cur.y() - startPos_.y());
+                const qreal ang = std::atan2(cur.y() - startPos_.y(), cur.x() - startPos_.x());
+                const auto pts = makeRegularPolygonPoints(startPos_, r, regularPolygonSides_, ang);
+                previewRegularPolygon_->setPath(pathFromClosedPoints(pts));
             }
             break;
         }
@@ -342,6 +377,22 @@ void DrawingScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
                 auto json = tmp.ToJson(); json["type"] = QStringLiteral("Ellipse");
                 if (undo_) undo_->push(new UndoCmd::AddShapeCommand(this, json));
                 else addItem(new ShapeItem(std::make_unique<Ellipse>(startPos_, rx, ry)));
+            }
+            break;
+        }
+        case Mode::RegularPolygon: {
+            if (previewRegularPolygon_) { removeItem(previewRegularPolygon_); delete previewRegularPolygon_; previewRegularPolygon_ = nullptr; }
+            const qreal r = std::hypot(endPos.x() - startPos_.x(), endPos.y() - startPos_.y());
+            if (r >= eps) {
+                const qreal ang = std::atan2(endPos.y() - startPos_.y(), endPos.x() - startPos_.x());
+                const auto pts = makeRegularPolygonPoints(startPos_, r, regularPolygonSides_, ang);
+                if (pts.size() >= 3) {
+                    Polygon tmp(pts);
+                    auto json = tmp.ToJson();
+                    json["type"] = QStringLiteral("Polygon");
+                    if (undo_) undo_->push(new UndoCmd::AddShapeCommand(this, json));
+                    else addItem(new ShapeItem(std::make_unique<Polygon>(pts)));
+                }
             }
             break;
         }

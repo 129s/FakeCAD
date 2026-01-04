@@ -14,12 +14,15 @@ class QGraphicsPathItem;
 class DrawingScene : public QGraphicsScene {
     Q_OBJECT
 public:
-    enum class Mode { None, Line, Rect, Circle, Ellipse, Polygon, Triangle };
+    enum class Mode { None, Line, Rect, Circle, Ellipse, Polygon, Triangle, RegularPolygon };
 
     explicit DrawingScene(QObject* parent = nullptr);
 
     void setMode(Mode m);
     Mode mode() const { return mode_; }
+
+    void setRegularPolygonSides(int n) { regularPolygonSides_ = (n < 3 ? 3 : n); }
+    int regularPolygonSides() const { return regularPolygonSides_; }
 
     // Grid & snapping
     void setShowGrid(bool v) { showGrid_ = v; update(); }
@@ -52,6 +55,7 @@ private:
     QVector<QPointF> polygonPoints_ {};
     QGraphicsPathItem* previewTriangle_ { nullptr };
     QVector<QPointF> trianglePoints_ {};
+    QGraphicsPathItem* previewRegularPolygon_ { nullptr };
 
     void clearPreview();
     void updatePolygonPreview(const QPointF& cur);
@@ -64,4 +68,5 @@ private:
     qreal gridSize_ { 20.0 };
 
     class QUndoStack* undo_ { nullptr };
+    int regularPolygonSides_ { 5 };
 };

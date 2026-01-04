@@ -13,6 +13,7 @@
 #include <QDockWidget>
 #include <QShortcut>
 #include <QKeyEvent>
+#include <QInputDialog>
 #include <QUndoStack>
 #include <QPointer>
 #include <memory>
@@ -112,6 +113,7 @@ void MainWindow::createActions() {
     actDrawEllipse = new QAction(tr("椭圆"), this);
     actDrawTriangle = new QAction(tr("三角形"), this);
     actDrawPolygon = new QAction(tr("多边形"), this);
+    actDrawRegularPolygon = new QAction(tr("正多边形"), this);
 
     actSelect->setCheckable(true);
     actDrawLine->setCheckable(true);
@@ -120,6 +122,7 @@ void MainWindow::createActions() {
     actDrawEllipse->setCheckable(true);
     actDrawTriangle->setCheckable(true);
     actDrawPolygon->setCheckable(true);
+    actDrawRegularPolygon->setCheckable(true);
     actSelect->setShortcut(QKeySequence(tr("1")));
     actDrawLine->setShortcut(QKeySequence(tr("2")));
     actDrawRect->setShortcut(QKeySequence(tr("3")));
@@ -127,6 +130,7 @@ void MainWindow::createActions() {
     actDrawEllipse->setShortcut(QKeySequence(tr("5")));
     actDrawTriangle->setShortcut(QKeySequence(tr("7")));
     actDrawPolygon->setShortcut(QKeySequence(tr("6")));
+    actDrawRegularPolygon->setShortcut(QKeySequence(tr("8")));
 
     drawGroup = new QActionGroup(this);
     drawGroup->setExclusive(true);
@@ -137,6 +141,7 @@ void MainWindow::createActions() {
     drawGroup->addAction(actDrawEllipse);
     drawGroup->addAction(actDrawTriangle);
     drawGroup->addAction(actDrawPolygon);
+    drawGroup->addAction(actDrawRegularPolygon);
 
     actSelect->setChecked(true);
 
@@ -147,6 +152,7 @@ void MainWindow::createActions() {
     connect(actDrawEllipse, &QAction::toggled, this, &MainWindow::onDrawEllipseToggled);
     connect(actDrawTriangle, &QAction::toggled, this, &MainWindow::onDrawTriangleToggled);
     connect(actDrawPolygon, &QAction::toggled, this, &MainWindow::onDrawPolygonToggled);
+    connect(actDrawRegularPolygon, &QAction::toggled, this, &MainWindow::onDrawRegularPolygonToggled);
 
     // Esc 返回选择
     auto escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
@@ -222,10 +228,11 @@ void MainWindow::createToolbars() {
     drawBar->addAction(actDrawLine);
     drawBar->addAction(actDrawRect);      
     drawBar->addAction(actDrawCircle);    
-    drawBar->addAction(actDrawEllipse);   
+    drawBar->addAction(actDrawEllipse);
     drawBar->addAction(actDrawTriangle);
-    drawBar->addAction(actDrawPolygon);   
-} 
+    drawBar->addAction(actDrawPolygon);
+    drawBar->addAction(actDrawRegularPolygon);
+}
 
 void MainWindow::createStatusbar() {
     statusBar()->showMessage(tr("就绪"));
@@ -296,6 +303,7 @@ void MainWindow::updateViewDragMode() {
         case DrawingScene::Mode::Ellipse: statusBar()->showMessage(tr("绘制椭圆（中心+半径X/Y）：按下拖拽释放"), 2000); break;
         case DrawingScene::Mode::Polygon: statusBar()->showMessage(tr("绘制多边形：单击添加顶点，右键或双击结束"), 2000); break;
         case DrawingScene::Mode::Triangle: statusBar()->showMessage(tr("绘制三角形：单击三次确定三个顶点"), 2000); break;
+        case DrawingScene::Mode::RegularPolygon: statusBar()->showMessage(tr("绘制正多边形（%1 边）：按下拖拽释放（拖拽方向确定一个顶点）").arg(scene->regularPolygonSides()), 2000); break;
         default: break;
         }
     }
@@ -339,6 +347,21 @@ void MainWindow::onDrawTriangleToggled(bool on) {
 void MainWindow::onDrawPolygonToggled(bool on) {
     if (!on) return;
     scene->setMode(DrawingScene::Mode::Polygon);
+    updateViewDragMode();
+}
+
+void MainWindow::onDrawRegularPolygonToggled(bool on) {
+    if (!on) return;
+    bool ok = false;
+    const int cur = scene->regularPolygonSides();
+    const int n = QInputDialog::getInt(this, tr("正多边形边数"),
+                                      tr("边数(>=3)"), cur, 3, 64, 1, &ok);
+    if (!ok) {
+        actSelect->setChecked(true);
+        return;
+    }
+    scene->setRegularPolygonSides(n);
+    scene->setMode(DrawingScene::Mode::RegularPolygon);
     updateViewDragMode();
 }
 
