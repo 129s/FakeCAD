@@ -9,6 +9,8 @@
 #include <QColorDialog>
 #include <QIcon>
 #include <QPixmap>
+#include <QLocale>
+#include <cmath>
 
 #include "ShapeItem.h"
 #include "../core/Shape.h"
@@ -29,12 +31,21 @@ void PropertyPanel::rebuildUI() {
     rotSpin_ = new QDoubleSpinBox(this);
     rotSpin_->setRange(-360.0, 360.0);
     rotSpin_->setSingleStep(1.0);
+    lengthEdit_ = new QLineEdit(this);
+    perimeterEdit_ = new QLineEdit(this);
+    areaEdit_ = new QLineEdit(this);
+    for (auto* e : {lengthEdit_, perimeterEdit_, areaEdit_}) {
+        e->setReadOnly(true);
+    }
 
     lay->addRow(lblType_);
     lay->addRow(tr("名称"), nameEdit_);
     lay->addRow(tr("颜色"), colorBtn_);
     lay->addRow(tr("线宽"), penWidthSpin_);
     lay->addRow(tr("旋转(°)"), rotSpin_);
+    lay->addRow(tr("长度"), lengthEdit_);
+    lay->addRow(tr("周长"), perimeterEdit_);
+    lay->addRow(tr("面积"), areaEdit_);
 
     connect(nameEdit_, &QLineEdit::textEdited, this, &PropertyPanel::onNameEdited);
     connect(penWidthSpin_, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &PropertyPanel::onPenWidthChanged);
@@ -52,14 +63,22 @@ void PropertyPanel::clearTarget() {
     refreshFromTarget();
 }
 
+void PropertyPanel::refresh() { refreshFromTarget(); }
+
 void PropertyPanel::refreshFromTarget() {
     updating_ = true;
     if (!target_) {
         lblType_->setText(tr("类型: -"));
         nameEdit_->setText(QString());
-    colorBtn_->setEnabled(false);
-    penWidthSpin_->setEnabled(false);
-    rotSpin_->setEnabled(false);
+        colorBtn_->setEnabled(false);
+        penWidthSpin_->setEnabled(false);
+        rotSpin_->setEnabled(false);
+        lengthEdit_->setEnabled(false);
+        perimeterEdit_->setEnabled(false);
+        areaEdit_->setEnabled(false);
+        lengthEdit_->setText(QStringLiteral("-"));
+        perimeterEdit_->setText(QStringLiteral("-"));
+        areaEdit_->setText(QStringLiteral("-"));
         updating_ = false;
         return;
     }
@@ -72,6 +91,24 @@ void PropertyPanel::refreshFromTarget() {
     penWidthSpin_->setValue(s->pen().widthF());
     rotSpin_->setEnabled(true);
     rotSpin_->setValue(s->rotationDegrees());
+    lengthEdit_->setEnabled(true);
+    perimeterEdit_->setEnabled(true);
+    areaEdit_->setEnabled(true);
+
+    auto fmt = [](double v) -> QString {
+        if (!std::isfinite(v)) return QStringLiteral("-");
+        return QLocale().toString(v, 'f', 2);
+    };
+    lengthEdit_->setText(QStringLiteral("-"));
+    perimeterEdit_->setText(QStringLiteral("-"));
+    areaEdit_->setText(QStringLiteral("-"));
+    if (auto* ls = dynamic_cast<LineShape*>(s)) {
+        lengthEdit_->setText(fmt(ls->Length()));
+    }
+    if (auto* as = dynamic_cast<AreaShape*>(s)) {
+        perimeterEdit_->setText(fmt(as->Perimeter()));
+        areaEdit_->setText(fmt(as->Area()));
+    }
     updating_ = false;
 }
 

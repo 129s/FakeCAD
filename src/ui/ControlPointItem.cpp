@@ -9,6 +9,7 @@
 
 #include "DrawingScene.h"
 #include <QCursor>
+#include <QTimer>
 
 #include "ShapeItem.h"
 #include "../undo/Commands.h"
@@ -90,7 +91,13 @@ void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
             QJsonObject neo = owner_->model()->ToJson();
             if (auto ds = dynamic_cast<class DrawingScene*>(owner_->scene())) {
                 if (auto st = ds->undoStack()) {
-                    st->push(new UndoCmd::EditShapeJsonCommand(owner_, oldJson_, neo));
+                    // 不能在控制点自身的鼠标事件回调里同步 push：
+                    // QUndoStack::push() 会立即 redo()，命令里会 updateHandles() 并删除当前控制点，
+                    // 造成“delete this”式的概率崩溃。延后一拍让事件先返回。
+                    const auto oldJ = oldJson_;
+                    QTimer::singleShot(0, st, [st, owner = owner_, oldJ, neo]() {
+                        st->push(new UndoCmd::EditShapeJsonCommand(owner, oldJ, neo));
+                    });
                 }
             }
         }
@@ -104,7 +111,13 @@ void ControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
         if (std::abs(newRot - initialOwnerRotation_) > 0.1) {
             if (auto ds = dynamic_cast<class DrawingScene*>(owner_->scene())) {
                 if (auto st = ds->undoStack()) {
-                    st->push(new UndoCmd::TransformShapeCommand(owner_, owner_->pos(), initialOwnerRotation_, owner_->pos(), newRot));
+                    // 同上：避免在旋转控制点自身的回调里同步 push 导致控制点被删除
+                    const QPointF pos = owner_->pos();
+                    const double oldRot = initialOwnerRotation_;
+                    const double neoRot = newRot;
+                    QTimer::singleShot(0, st, [st, owner = owner_, pos, oldRot, neoRot]() {
+                        st->push(new UndoCmd::TransformShapeCommand(owner, pos, oldRot, pos, neoRot));
+                    });
                 }
             }
         }

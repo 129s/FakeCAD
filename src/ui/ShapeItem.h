@@ -59,14 +59,15 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
 
-private:
-    std::unique_ptr<Shape> shape_;
-    QList<class QGraphicsItem*> handles_;
-    class ControlPointItem* rotationHandle_ { nullptr };
-    void clearHandles();
-    void updateTransformOrigin();
-    void setHandlesFrozen(bool on) { handlesFrozen_ = on; }
-    void syncHandlesPositions(HandleKind activeKind, int activeIndex);
+ private:
+ 	std::unique_ptr<Shape> shape_;
+ 	QList<class QGraphicsItem*> handles_;
+ 	class ControlPointItem* rotationHandle_ { nullptr };
+ 	void clearHandles();
+ 	void updateTransformOrigin();
+	void updateTransformOriginPreservingScenePoint(const QPointF& localPoint);
+ 	void setHandlesFrozen(bool on) { handlesFrozen_ = on; }
+ 	void syncHandlesPositions(HandleKind activeKind, int activeIndex);
 
     // move tracking
     QPointF pressPos_{};

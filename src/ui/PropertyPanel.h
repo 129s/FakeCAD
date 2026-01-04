@@ -10,13 +10,16 @@ class ShapeItem;
 
 class PropertyPanel : public QWidget {
     Q_OBJECT
-public:
+ public:
     explicit PropertyPanel(QWidget* parent = nullptr);
 
     void setShapeItem(ShapeItem* item);
     void clearTarget();
 
-private slots:
+public slots:
+    void refresh();
+
+ private slots:
     void onNameEdited(const QString& text);
     void onPenWidthChanged(double w);
     void onColorClicked();
@@ -35,4 +38,7 @@ private:
     QPushButton* colorBtn_ {};
     QDoubleSpinBox* penWidthSpin_ {};
     QDoubleSpinBox* rotSpin_ {};
+    QLineEdit* lengthEdit_ {};
+    QLineEdit* perimeterEdit_ {};
+    QLineEdit* areaEdit_ {};
 };

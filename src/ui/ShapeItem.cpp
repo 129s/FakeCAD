@@ -64,6 +64,21 @@ void ShapeItem::updateTransformOrigin() {
     setTransformOriginPoint(boundingRect().center());
 }
 
+void ShapeItem::updateTransformOriginPreservingScenePoint(const QPointF& localPoint) {
+    const QPointF beforeScene = mapToScene(localPoint);
+    setTransformOriginPoint(boundingRect().center());
+    const QPointF afterScene = mapToScene(localPoint);
+
+    const QPointF deltaParent = parentItem()
+        ? parentItem()->mapFromScene(beforeScene) - parentItem()->mapFromScene(afterScene)
+        : (beforeScene - afterScene);
+
+    if (!qFuzzyIsNull(deltaParent.x()) || !qFuzzyIsNull(deltaParent.y())) {
+        setPos(pos() + deltaParent);
+        if (shape_) shape_->MoveTo(pos().x(), pos().y());
+    }
+}
+
 void ShapeItem::showHandles(bool show) {
     if (!show) { clearHandles(); return; }
     updateHandles();
@@ -201,81 +216,92 @@ void ShapeItem::syncHandlesPositions(HandleKind activeKind, int activeIndex) {
 }
 
 void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos, const QPointF& /*scenePos*/, bool /*release*/) {
+    auto notifyMetrics = [&] {
+        if (scene()) {
+            if (auto ds = dynamic_cast<DrawingScene*>(scene())) {
+                ds->notifyShapeMetricsChanged(this);
+            }
+        }
+    };
     if (auto* ls = dynamic_cast<LineSegment*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
             const QRectF oldBr = boundingRect();
             prepareGeometryChange();
+            const QPointF fixed = (index == 0) ? ls->p2() : ls->p1();
             if (index == 0) ls->setP1(localPos); else ls->setP2(localPos);
             const QRectF newBr = boundingRect();
             update(oldBr.united(newBr));
-            updateTransformOrigin();
+            updateTransformOriginPreservingScenePoint(fixed);
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         }
-    } else if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
+    } else if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {        
         if (kind == HandleKind::Vertex) {
             const QRectF oldBr = boundingRect();
             prepareGeometryChange();
+            const QPointF fixed = (index == 0) ? tr->p2() : tr->p1();
             if (index == 0) tr->setP1(localPos);
             else if (index == 1) tr->setP2(localPos);
             else tr->setP3(localPos);
             const QRectF newBr = boundingRect();
             update(oldBr.united(newBr));
-            updateTransformOrigin();
+            updateTransformOriginPreservingScenePoint(fixed);
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         }
     } else if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
         if (kind == HandleKind::Vertex) {
             const QRectF oldBr = boundingRect();
             prepareGeometryChange();
             auto pts = pg->points();
-            if (index>=0 && index<pts.size()) pts[index] = localPos;
+            const int fixedIndex = (pts.size() > 1) ? ((index == 0) ? 1 : 0) : -1;
+            const QPointF fixed = (fixedIndex >= 0) ? pts[fixedIndex] : QPointF{};
+            if (index>=0 && index<pts.size()) pts[index] = localPos;      
             pg->setPoints(pts);
             const QRectF newBr = boundingRect();
             update(oldBr.united(newBr));
-            updateTransformOrigin();
+            if (fixedIndex >= 0) updateTransformOriginPreservingScenePoint(fixed);
+            else updateTransformOrigin();
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         }
-    } else if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
+    } else if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {        
         if (kind == HandleKind::Vertex) {
             const QRectF oldBr = boundingRect();
             prepareGeometryChange();
             auto pts = pl->points();
-            if (index>=0 && index<pts.size()) pts[index] = localPos;
+            const int fixedIndex = (pts.size() > 1) ? ((index == 0) ? 1 : 0) : -1;
+            const QPointF fixed = (fixedIndex >= 0) ? pts[fixedIndex] : QPointF{};
+            if (index>=0 && index<pts.size()) pts[index] = localPos;      
             pl->setPoints(pts);
             const QRectF newBr = boundingRect();
             update(oldBr.united(newBr));
-            updateTransformOrigin();
+            if (fixedIndex >= 0) updateTransformOriginPreservingScenePoint(fixed);
+            else updateTransformOrigin();
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         }
-    } else if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
+    } else if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {       
         if (kind == HandleKind::Corner) {
             const QRectF oldBr = boundingRect();
             prepareGeometryChange();
             const QRectF r = rc->rect().normalized();
             QPointF fixed;
             switch (index) {
-            case 0: fixed = r.bottomRight(); break; // drag TL, fix BR
-            case 1: fixed = r.bottomLeft(); break;  // drag TR, fix BL
-            case 2: fixed = r.topLeft(); break;     // drag BR, fix TL
-            case 3: fixed = r.topRight(); break;    // drag BL, fix TR
+            case 0: fixed = r.bottomRight(); break; // drag TL, fix BR    
+            case 1: fixed = r.bottomLeft(); break;  // drag TR, fix BL    
+            case 2: fixed = r.topLeft(); break;     // drag BR, fix TL    
+            case 3: fixed = r.topRight(); break;    // drag BL, fix TR    
             default: fixed = r.bottomRight(); break;
             }
 
-            // 旋转状态下，修改几何会改变中心点（transformOrigin），需要补偿位移以保持“固定对角点”在场景中不漂移
-            const QPointF fixedSceneBefore = mapToScene(fixed);
             rc->setRect(QRectF(localPos, fixed).normalized());
-            updateTransformOrigin();
-            const QPointF fixedSceneAfter = mapToScene(fixed);
-            const QPointF deltaScene = fixedSceneBefore - fixedSceneAfter;
-            const QPointF deltaParent = parentItem()
-                ? parentItem()->mapFromScene(fixedSceneBefore) - parentItem()->mapFromScene(fixedSceneAfter)
-                : deltaScene;
-            setPos(pos() + deltaParent);
-            if (shape_) shape_->MoveTo(pos().x(), pos().y());
+            updateTransformOriginPreservingScenePoint(fixed);
 
             const QRectF newBr = boundingRect();
             update(oldBr.united(newBr));
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         }
     } else if (auto* cc = dynamic_cast<Circle*>(shape_.get())) {
         if (kind == HandleKind::Center) {
@@ -286,6 +312,7 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             update(oldBr.united(newBr));
             updateTransformOrigin();
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         } else if (kind == HandleKind::Radius) {
             const QRectF oldBr = boundingRect();
             prepareGeometryChange();
@@ -296,6 +323,7 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             update(oldBr.united(newBr));
             updateTransformOrigin();
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         }
     } else if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
         if (kind == HandleKind::Center) {
@@ -306,16 +334,18 @@ void ShapeItem::handleMoved(HandleKind kind, int index, const QPointF& localPos,
             update(oldBr.united(newBr));
             updateTransformOrigin();
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         } else if (kind == HandleKind::Radius) {
             const QRectF oldBr = boundingRect();
             prepareGeometryChange();
             const auto c = el->center();
-            if (index == 0) el->setRx(std::abs(localPos.x() - c.x()));
+            if (index == 0) el->setRx(std::abs(localPos.x() - c.x()));    
             else el->setRy(std::abs(localPos.y() - c.y()));
             const QRectF newBr = boundingRect();
             update(oldBr.united(newBr));
             updateTransformOrigin();
             syncHandlesPositions(kind, index);
+            notifyMetrics();
         }
     }
 }
@@ -353,78 +383,38 @@ void ShapeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
 
     if (auto* ls = dynamic_cast<LineSegment*>(shape_.get())) {
         painter->drawLine(ls->p1(), ls->p2());
-        const double L = ls->Length();
-        painter->setPen(QPen(Qt::darkGray));
-        painter->save();
-        painter->setClipRect(boundingRect());
-        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("L=%1").arg(L, 0, 'f', 2));
-        painter->restore();
         return;
     }
     if (auto* rc = dynamic_cast<Rectangle*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         painter->drawRect(rc->rect());
-        painter->setPen(QPen(Qt::darkGray));
-        const double P = rc->Perimeter();
-        const double A = rc->Area();
-        painter->save();
-        painter->setClipRect(boundingRect());
-        painter->drawText(rc->rect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(P, 0, 'f', 2).arg(A, 0, 'f', 2));
-        painter->restore();
         return;
     }
     if (auto* cc = dynamic_cast<Circle*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         const auto r = cc->radius();
         painter->drawEllipse(cc->center(), r, r);
-        painter->setPen(QPen(Qt::darkGray));
-        const double P = cc->Perimeter();
-        const double A = cc->Area();
-        painter->save();
-        painter->setClipRect(boundingRect());
-        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(P, 0, 'f', 2).arg(A, 0, 'f', 2));
-        painter->restore();
         return;
     }
     if (auto* tr = dynamic_cast<Triangle*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         QPolygonF poly; poly << tr->p1() << tr->p2() << tr->p3();
         painter->drawPolygon(poly);
-        painter->setPen(QPen(Qt::darkGray));
-        painter->save();
-        painter->setClipRect(boundingRect());
-        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(tr->Perimeter(), 0, 'f', 2).arg(tr->Area(), 0, 'f', 2));
-        painter->restore();
         return;
     }
     if (auto* pg = dynamic_cast<Polygon*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         painter->drawPolygon(QPolygonF(pg->points()));
-        painter->setPen(QPen(Qt::darkGray));
-        painter->save();
-        painter->setClipRect(boundingRect());
-        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(pg->Perimeter(), 0, 'f', 2).arg(pg->Area(), 0, 'f', 2));
-        painter->restore();
         return;
     }
     if (auto* pl = dynamic_cast<Polyline*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         painter->drawPolyline(QPolygonF(pl->points()));
-        painter->setPen(QPen(Qt::darkGray));
-        painter->save();
-        painter->setClipRect(boundingRect());
-        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("L=%1").arg(pl->Length(), 0, 'f', 2));
-        painter->restore();
         return;
     }
     if (auto* el = dynamic_cast<Ellipse*>(shape_.get())) {
         painter->setBrush(Qt::NoBrush);
         painter->drawEllipse(el->center(), el->rx(), el->ry());
-        painter->setPen(QPen(Qt::darkGray));
-        painter->save();
-        painter->setClipRect(boundingRect());
-        painter->drawText(boundingRect().topLeft() + QPointF(4, 12), QString("P=%1 A=%2").arg(el->Perimeter(), 0, 'f', 2).arg(el->Area(), 0, 'f', 2));
-        painter->restore();
         return;
     }
 }

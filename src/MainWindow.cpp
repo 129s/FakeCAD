@@ -237,6 +237,7 @@ void MainWindow::createPropertyDock() {
     addDockWidget(Qt::RightDockWidgetArea, propDock);
     // 依赖 scene 已创建
     connect(scene, &QGraphicsScene::selectionChanged, this, &MainWindow::onSelectionChanged);
+    connect(scene, &DrawingScene::shapeMetricsChanged, propPanel, &PropertyPanel::refresh);
 }
 
 void MainWindow::onNew() { statusBar()->showMessage(tr("新建工程（待实现）"), 2000); }

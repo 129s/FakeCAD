@@ -10,10 +10,11 @@ class QGraphicsLineItem;
 class QGraphicsRectItem;
 class QGraphicsEllipseItem;
 class QGraphicsPathItem;
+class ShapeItem;
 
 class DrawingScene : public QGraphicsScene {
     Q_OBJECT
-public:
+ public:
     enum class Mode { None, Line, Rect, Circle, Ellipse, Polygon, Triangle, RegularPolygon };
 
     explicit DrawingScene(QObject* parent = nullptr);
@@ -34,6 +35,10 @@ public:
     QPointF snapPoint(const QPointF& p) const;
     void setUndoStack(QUndoStack* s) { undo_ = s; }
     QUndoStack* undoStack() const { return undo_; }
+    void notifyShapeMetricsChanged(ShapeItem* item) { emit shapeMetricsChanged(item); }
+
+signals:
+    void shapeMetricsChanged(ShapeItem* item);
 
  protected:
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;

@@ -68,7 +68,7 @@ void DeleteShapesCommand::undo() {
 TransformShapeCommand::TransformShapeCommand(ShapeItem* item, const QPointF& oldPos, double oldRot, const QPointF& newPos, double newRot, QUndoCommand* parent)
     : QUndoCommand(QObject::tr("变换"), parent), item_(item), oldPos_(oldPos), oldRot_(oldRot), newPos_(newPos), newRot_(newRot) {}
 
-void TransformShapeCommand::apply(const QPointF& pos, double rot) {
+void TransformShapeCommand::apply(const QPointF& pos, double rot) {       
     if (!item_) return;
     item_->setPos(pos);
     item_->setRotation(rot);
@@ -77,6 +77,9 @@ void TransformShapeCommand::apply(const QPointF& pos, double rot) {
         item_->model()->setRotationDegrees(rot);
     }
     item_->updateHandles();
+    if (auto ds = dynamic_cast<DrawingScene*>(item_->scene())) {
+        ds->notifyShapeMetricsChanged(item_);
+    }
 }
 
 void TransformShapeCommand::redo() { apply(newPos_, newRot_); }
@@ -91,6 +94,9 @@ void EditShapeJsonCommand::apply(const QJsonObject& j) {
     Ser::ApplyJsonToShape(item_->model(), j);
     item_->geometryChanged();
     item_->updateHandles();
+    if (auto ds = dynamic_cast<DrawingScene*>(item_->scene())) {
+        ds->notifyShapeMetricsChanged(item_);
+    }
 }
 
 void EditShapeJsonCommand::redo() { apply(neo_); }
