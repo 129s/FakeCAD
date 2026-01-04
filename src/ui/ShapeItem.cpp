@@ -74,8 +74,11 @@ void ShapeItem::updateTransformOriginPreservingScenePoint(const QPointF& localPo
         : (beforeScene - afterScene);
 
     if (!qFuzzyIsNull(deltaParent.x()) || !qFuzzyIsNull(deltaParent.y())) {
+        const bool prev = suppressGridSnap_;
+        suppressGridSnap_ = true;
         setPos(pos() + deltaParent);
         if (shape_) shape_->MoveTo(pos().x(), pos().y());
+        suppressGridSnap_ = prev;
     }
 }
 

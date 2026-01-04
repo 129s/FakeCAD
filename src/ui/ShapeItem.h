@@ -39,7 +39,7 @@ public:
             if (!handlesFrozen_) updateHandles();
         } else if (change == ItemPositionChange) {
             // 位置吸附到网格
-            if (scene()) {
+            if (!suppressGridSnap_ && scene()) {
                 if (auto ds = dynamic_cast<class DrawingScene*>(scene())) {
                     if (ds->snapToGrid()) {
                         QPointF p = value.toPointF();
@@ -60,14 +60,14 @@ protected:
 
 
  private:
- 	std::unique_ptr<Shape> shape_;
- 	QList<class QGraphicsItem*> handles_;
- 	class ControlPointItem* rotationHandle_ { nullptr };
- 	void clearHandles();
- 	void updateTransformOrigin();
-	void updateTransformOriginPreservingScenePoint(const QPointF& localPoint);
- 	void setHandlesFrozen(bool on) { handlesFrozen_ = on; }
- 	void syncHandlesPositions(HandleKind activeKind, int activeIndex);
+    std::unique_ptr<Shape> shape_;
+    QList<class QGraphicsItem*> handles_;
+    class ControlPointItem* rotationHandle_ { nullptr };
+    void clearHandles();
+    void updateTransformOrigin();
+    void updateTransformOriginPreservingScenePoint(const QPointF& localPoint);
+    void setHandlesFrozen(bool on) { handlesFrozen_ = on; }
+    void syncHandlesPositions(HandleKind activeKind, int activeIndex);    
 
     // move tracking
     QPointF pressPos_{};
@@ -75,4 +75,5 @@ protected:
     bool moving_{false};
 
     bool handlesFrozen_{false};
+    bool suppressGridSnap_{false};
 };
