@@ -19,12 +19,9 @@
 #include <memory>
 
 #include "ui/ShapeItem.h"
-#include "ui/DrawingScene.h"
+#include "ui/DrawingScene.h"        
 #include "ui/CanvasView.h"
-#include "ui/PropertyPanel.h"
-#include "core/shapes/LineSegment.h"
-#include "core/shapes/Rectangle.h"
-#include "core/shapes/Circle.h"
+#include "ui/PropertyPanel.h"       
 #include "core/Serialization.h"
 #include "undo/Commands.h"
 
@@ -58,11 +55,6 @@ MainWindow::MainWindow(QWidget* parent)
     setCentralWidget(view);
 
     createPropertyDock();
-
-    // 示例元素（基于模型的适配器）
-    scene->addItem(new ShapeItem(std::make_unique<LineSegment>(QPointF(-100, -80), QPointF(150, 60))));
-    scene->addItem(new ShapeItem(std::make_unique<Rectangle>(QRectF(-200, -150, 120, 90))));
-    scene->addItem(new ShapeItem(std::make_unique<Circle>(QPointF(180, -40), 60)));
 
     qApp->installEventFilter(this);
 }
